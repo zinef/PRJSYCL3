@@ -11,3 +11,10 @@
 7. Attendre la prochaine entrée 
 ## Diagramme 
 ![alt text](https://gaufre.informatique.univ-paris-diderot.fr/fodil/prjsycl3/blob/master/Images/Diagrame.png)
+
+## Implémentation 
++ La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
++ La manipulation des répertoire se fera avec `opendir`, `readdir`, `closedir`  et `getcwd`, `chdir`, `mkdir` 
++ L'analyse peut être effectuée à l'aide de `strsep ("")`
++ Après l'analyse, on vérifie la liste des commandes intégrées et, le cas échéant, on l'exécute 
++ La détection des pipes peut également être effectuée à l'aide de strsep («|»). Pour les gérer, on sépare d'abord la première partie de la commande de la seconde. Ensuite, après avoir analysé chaque partie, on appel les deux parties dans deux nouveaux enfants séparés, en utilisant `execvp`.
