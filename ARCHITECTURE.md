@@ -10,4 +10,4 @@
 6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** 
 7. Attendre la prochaine entrée 
 ## Diagramme 
-![image](https://gaufre.informatique.univ-paris-diderot.fr/fodil/prjsycl3/blob/master/Images/Diagrame.png)
+![alt text](https://gaufre.informatique.univ-paris-diderot.fr/fodil/prjsycl3/blob/master/Images/Diagrame.png)
