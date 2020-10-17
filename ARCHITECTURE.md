@@ -10,7 +10,7 @@
 6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** 
 7. Attendre la prochaine entrée 
 ## Diagramme 
-![alt text](https://gaufre.informatique.univ-paris-diderot.fr/fodil/prjsycl3/blob/master/Images/Diagrame.png)
+![](./Images/Diagrame.png)
 
 ## Implémentation 
 + La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
