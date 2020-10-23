@@ -106,11 +106,18 @@ Un Shell fait trois choses principales au cours de sa vie :
 - Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "|") 
 
 
-| header 1 | header 2 | header 3 | 
-| ---      |  ------  |----------| 
-| cell 1   | cell 2   | cell 3   | 
-| cell 4 | cell 5 is longer | cell 6 is much longer than the others, but that's ok. It eventually wraps the text when the cell is too large for the display size. |
-| cell 7   |          | cell 9   |
+| Id | Spécification | État | Criticisme | Effort | Stabilité | 
+| -- | --------------   | ----  | -----------  | ------- | ---------  | 
+| 1 | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Proposé | Critique | Stable | 
+| 2 | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Proposé | Critique | Stable | 
+| 3 |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Proposé | Critique | Stable | 
+| 4 | Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball | Proposé | Critique | Stable | 
+| 5 | Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option  | Proposé | Critique | Stable | 
+| 6 | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option ou avec l'option `-r` | Proposé | Critique | Stable | 
+| 7 | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l` | Proposé | Critique | Stable | 
+| 8 | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option| Proposé | Critique | Stable | 
+| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Proposé | Critique | Stable | 
+| 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Proposé |  Critique | Stable |  
 
 **État**  
 `Proposé : en cours de discussion, pas encore validé`  
