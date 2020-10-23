@@ -103,7 +103,8 @@ Un Shell fait trois choses principales au cours de sa vie :
 - Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l`
 - Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option
 - Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur
-- Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "|")
+- Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "|") 
+
 
 | Id | Spécification | État | Criticisme | Effort | Stabilité |
 | -- | --------------   | ----  | -----------  | ------- | ---------  | ---- |
@@ -118,19 +119,19 @@ Un Shell fait trois choses principales au cours de sa vie :
 | 9  | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Proposé | Critique | Stable |
 | 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Proposé |  Critique | Stable |
 
-**État** <br/>
-`Proposé : en cours de discussion, pas encore validé`<br/>
-`Approuvé : validé et attend d’être implémenté`<br/>
-`Rejeté : rejeté et n’attendra pas son implémentation`<br/>
-`Incorporé : spécification qui a été implémentée durant une version antrieure`<br/>
-**Criticisme**<br/>
-` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`<br/>
-`Important : la spécification peut être omise mais son omission affecterait considérablement l’utilisabilité du système`<br/>
-` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`<br/>
-**Effort**<br/>
+**État**  <br>
+`Proposé : en cours de discussion, pas encore validé`  
+`Approuvé : validé et attend d’être implémenté`  
+`Rejeté : rejeté et n’attendra pas son implémentation`  
+`Incorporé : spécification qui a été implémentée durant une version antrieure`  
+**Criticisme**  
+` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`  
+`Important : la spécification peut être omise mais son omission affecterait considérablement l’utilisabilité du système`  
+` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`  
+**Effort**  
 `Estimation approximative des ressources et du temps nécessaire pour la spécification`<br/>
-**Stabilité**<br/>
-`La probabilité que la spécification change dans le temps`<br/>
+**Stabilité**  
+`La probabilité que la spécification change dans le temps`  
  Ces attributs évoluent au fil du temps ( avancement du projet )
 
 
