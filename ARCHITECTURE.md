@@ -3,7 +3,7 @@
 Le but du projet est de faire tourner un <ins>`Shell`</ins> qui permet à l'utilisateur de traiter les <ins>`tarballs`</ins> comme s'il s'agissait de répertoires, **sans que les tarballs ne soient désarchivés**.
 Mais ca consiste en quoi un Shell ? et les tarballs ?
 
-<ins>**Définitions :**</ins>
+<ins>**Définitions :**</ins>  
 <ins>**Shell :**</ins> Le Shell (ou interface système en français) est un programme qui reçoit des commandes informatiques données par un utilisateur à partir de son clavier pour les envoyer au système d’exploitation qui se chargera de les exécuter.  
 
 <ins>**Tarballs :**</ins> Le programme tar (de l'anglais tape archiver, littéralement « archiveur pour bande ») est un logiciel d'archivage de fichiers standard des systèmes de type UNIX. Il a été créé dans les premières versions d'UNIX et standardisé par les normes POSIX.1-1988 puis POSIX.1-2001. Il existe plusieurs implémentations1 tar, la plus couramment utilisée étant GNU tar. (Wikipédia)
@@ -27,8 +27,8 @@ Les interpréteurs de commandes ont les caractéristiques suivantes :
 - Permettre à l'utilisateur de voir le contenu des archives.
 - Permettre à l'utilisateur d'extraire des fichiers.
 
-par défaut, une archive tar n'est pas compressée, mais il suffit d'utiliser dessus un outil de compression tel que `gzip` pour obtenir des archives compressées `*.tar.gz` , souvent aussi nommées `*.tgz`
-
+Par défaut, une archive tar n'est pas compressée, mais il suffit d'utiliser dessus un outil de compression tel que `gzip` pour obtenir des archives compressées `*.tar.gz` , souvent aussi nommées `*.tgz`  
+![](./Images/Targzip.png)  
 **Le format des archives Tar :**
 Un fichier `tar` est une suite de blocs de 512 octets. S'il représente une archive des fichiers `f1`, … , `fn`, alors ce fichier `tar` comporte, dans l'ordre :
 
@@ -82,7 +82,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** .
 7. Attendre la prochaine entrée .
 ## Diagramme du processus de fonctionnement 
-![](./Images/Diagrame.png)
+![](./Images/DiagrammeProcessus.png)
 
 ## Outils techniques  pour l'implémentation 
 + La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
@@ -125,9 +125,9 @@ Un Shell fait trois choses principales au cours de sa vie :
 `Rejeté : rejeté et n’attendra pas son implémentation`  
 `Incorporé : spécification qui a été implémentée durant une version antrieure`  
 **Criticisme**  
-` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`  
+`Critique : la spécification doit être implémentée sinon le système n’est pas accepté`  
 `Important : la spécification peut être omise mais son omission affecterait considérablement l’utilisabilité du système`  
-` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`   
+`Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`   
 **Stabilité**  
 `La probabilité que la spécification change dans le temps`  
  Ces attributs évoluent au fil du temps ( avancement du projet )
