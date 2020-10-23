@@ -107,31 +107,30 @@ Un Shell fait trois choses principales au cours de sa vie :
 
 | Id | Spécification | État | Criticisme | Effort | Stabilité |
 | -- | --------------   | ----  | -----------  | ------- | ---------  | ---- |
-| 1 | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Proposé | Critique | Stable |
-| 2 | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Proposé | Critique | Stable |
-| 3 |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Proposé | Critique | Stable |
-| 4 | Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball | Proposé | Critique | Stable |
-| 5 | Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option  | Proposé | Critique | Stable |
-| 6 | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option ou avec l'option `-r` | Proposé | Critique | Stable |
-| 7 | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l` | Proposé | Critique | Stable |
-| 8 | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option| Proposé | Critique | Stable |
-| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Proposé | Critique | Stable |
+| 1  | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Proposé | Critique | Stable |
+| 2  | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Proposé | Critique | Stable |
+| 3  |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Proposé | Critique | Stable |
+| 4  | Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball | Proposé | Critique | Stable |
+| 5  | Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option  | Proposé | Critique | Stable |
+| 6  | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option ou avec l'option `-r` | Proposé | Critique | Stable |
+| 7  | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l` | Proposé | Critique | Stable |
+| 8  | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option| Proposé | Critique | Stable |
+| 9  | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Proposé | Critique | Stable |
 | 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Proposé |  Critique | Stable |
 
-**État**
-`Proposé : en cours de discussion, pas encore validé`
-`Approuvé : validé et attend d’être implémenté`
-`Rejeté : rejeté et n’attendra pas son implémentation`
-`Incorporé : spécification qui a été implémentée durant une version antrieure`
-**Criticisme**
-` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`
-`Important : la spécification peut être omise mais son
-omission affecterait considérablement l’utilisabilité du système`
-` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`
-**Effort**
-`Estimation approximative des ressources et du temps nécessaire pour la spécification`
-**Stabilité**
-`La probabilité que la spécification change dans le temps`
+**État** <br/>
+`Proposé : en cours de discussion, pas encore validé`<br/>
+`Approuvé : validé et attend d’être implémenté`<br/>
+`Rejeté : rejeté et n’attendra pas son implémentation`<br/>
+`Incorporé : spécification qui a été implémentée durant une version antrieure`<br/>
+**Criticisme**<br/>
+` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`<br/>
+`Important : la spécification peut être omise mais son omission affecterait considérablement l’utilisabilité du système`<br/>
+` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`<br/>
+**Effort**<br/>
+`Estimation approximative des ressources et du temps nécessaire pour la spécification`<br/>
+**Stabilité**<br/>
+`La probabilité que la spécification change dans le temps`<br/>
  Ces attributs évoluent au fil du temps ( avancement du projet )
 
 
