@@ -3,7 +3,7 @@
 Le but du projet est de faire tourner un <ins>`Shell`</ins> qui permet à l'utilisateur de traiter les <ins>`tarballs`</ins> comme s'il s'agissait de répertoires, **sans que les tarballs ne soient désarchivés**.
 Mais ca consiste en quoi un Shell ? et les tarballs ?
 
-<ins>**Définitions :** </ins>
+<ins>**Définitions :**</ins>
 <ins>**Shell :**</ins> Le Shell (ou interface système en français) est un programme qui reçoit des commandes informatiques données par un utilisateur à partir de son clavier pour les envoyer au système d’exploitation qui se chargera de les exécuter.  
 
 <ins>**Tarballs :**</ins> Le programme tar (de l'anglais tape archiver, littéralement « archiveur pour bande ») est un logiciel d'archivage de fichiers standard des systèmes de type UNIX. Il a été créé dans les premières versions d'UNIX et standardisé par les normes POSIX.1-1988 puis POSIX.1-2001. Il existe plusieurs implémentations1 tar, la plus couramment utilisée étant GNU tar. (Wikipédia)
@@ -65,22 +65,49 @@ struct posix_header
 ```
 
 # Architecture générale du Shell
-## Analyse
+## Expression de besoins , cas d'utilisations et analyse 
+### Durée de vie d'un shell 
+Un Shell fait trois choses principales au cours de sa vie :
+1. **Initialisation :** dans cette étape, un Shell typique lit et exécute ses fichiers de configuration. Celles-ci modifient certains aspects du comportement du Shell.
+2. **Interprétation :** Ensuite, le Shell lit les commandes de `stdin` (qui pourrait être interactif, ou un fichier) et les exécute.
+3. **Terminaison :** Une fois ses commandes exécutées, le Shell exécute toutes les commandes d'arrêt, libère de la mémoire et s'arrête.
+### Le processus de fonctionnement de note Shell `zfi`
 #### Une fois la commande entrée, les opérations suivantes sont effectuées:
 
-1. La commende est entrée , si cette commande n'est pas la chaine vide on la garde dans l'historique des commandes
-2. Analyse : consiste en la division des commandes en sous chaines pour l'interpréter 
-3. Analyse pour les caractères spéciaux comme : **|** **<** **>** **2>**
-4. Vérification de l'existence de la commande dans le Shell i.e. une commende interprétable 
-5. S'il existe des pipe , on les manipulera 
-6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** 
-7. Attendre la prochaine entrée 
-## Diagramme 
+1. La commende est entrée , si cette commande n'est pas la chaine vide on la garde dans l'historique des commandes .
+2. Analyse : consiste en la division des commandes en sous chaines pour les interpréter .
+3. Analyse pour les caractères spéciaux comme : **|** **<** **>** **2>** .
+4. Vérification de l'existence de la commande dans le Shell i.e. une commende interprétable .
+5. S'il existe des pipe , on les manipulera .
+6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** .
+7. Attendre la prochaine entrée .
+## Diagramme du processus de fonctionnement 
 ![](./Images/Diagrame.png)
 
-## Implémentation 
+## Outils techniques  pour l'implémentation 
 + La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
 + La manipulation des répertoire se fera avec `opendir`, `readdir`, `closedir`  et `getcwd`, `chdir`, `mkdir` 
 + L'analyse peut être effectuée à l'aide de `strsep ("")`
 + Après l'analyse, on vérifie la liste des commandes intégrées et, le cas échéant, on l'exécute 
-+ La détection des pipes peut également être effectuée à l'aide de strsep («|»). Pour les gérer, on sépare d'abord la première partie de la commande de la seconde. Ensuite, après avoir analysé chaque partie, on appel les deux parties dans deux nouveaux enfants séparés, en utilisant `execvp`.
++ La détection des pipes peut également être effectuée à l'aide de `strsep («|»)` par exemple . Pour les gérer, on sépare d'abord la première partie de la commande de la seconde. Ensuite, après avoir analysé chaque partie, on appel les deux parties dans deux nouveaux enfants séparés, en utilisant la famille des `exec`.
++ pour plus de détails … (voir le code source)
+
+## Expression de besoins 
+### Spécifications fonctionnels 
+- Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver.
+- Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel 
+- Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball.
+- Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball.
+- Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option.
+- Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option ou avec l'option `-r`
+- Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l`
+- Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option
+- Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur
+- Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "|")
+
+
+### Spéciations techniques 
+- Le système doit être programmer en langage C
+- Le système doit lancer tous les processus en premier plan
+- Le système doit être testé sur la distribution linux antiX-19 (v19.2.1) ou bien sur un conteneur Docker 
+- le système doit être programmer en utilisant seulement les bibliothèques et les fonctions de bas niveau 
