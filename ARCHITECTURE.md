@@ -71,7 +71,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 1. **Initialisation :** dans cette étape, un Shell typique lit et exécute ses fichiers de configuration. Celles-ci modifient certains aspects du comportement du Shell.
 2. **Interprétation :** Ensuite, le Shell lit les commandes de `stdin` (qui pourrait être interactif, ou un fichier) et les exécute.
 3. **Terminaison :** Une fois ses commandes exécutées, le Shell exécute toutes les commandes d'arrêt, libère de la mémoire et s'arrête.
-### Le processus de fonctionnement de note Shell `zfi`
+### Le processus de fonctionnement de notre Shell `zfi`
 #### Une fois la commande entrée, les opérations suivantes sont effectuées:
 
 1. La commende est entrée , si cette commande n'est pas la chaine vide on la garde dans l'historique des commandes .
@@ -138,3 +138,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 - Le système doit lancer tous les processus en premier plan
 - Le système doit être testé sur la distribution linux antiX-19 (v19.2.1) ou bien sur un conteneur Docker 
 - le système doit être programmer en utilisant seulement les bibliothèques et les fonctions de bas niveau
+
+## Cas d'utilisations 
+Un diagramme de cas d'utilisation de ce Shell (simplifié au maximum)
+![](./Images/CasDUtilisation.png)
