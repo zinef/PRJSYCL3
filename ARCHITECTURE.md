@@ -133,7 +133,7 @@ Un Shell fait trois choses principales au cours de sa vie :
  Ces attributs évoluent au fil du temps ( avancement du projet )
 
 
-### Spéciations techniques 
+### Spécifications techniques 
 - Le système doit être programmer en langage C
 - Le système doit lancer tous les processus en premier plan
 - Le système doit être testé sur la distribution linux antiX-19 (v19.2.1) ou bien sur un conteneur Docker 
@@ -142,3 +142,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 ## Cas d'utilisations 
 Un diagramme de cas d'utilisation de ce Shell (simplifié au maximum)
 ![](./Images/CasDUtilisation.png)
+
+## Récapitulatif 
+Pour un récapitulatif consistant y'a pas mieux qu'un **_`diagramme de séquence`_** pour représenter tout ça 
+![](./Images/Diagramme_de_Séquence.png) 
