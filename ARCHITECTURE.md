@@ -106,8 +106,8 @@ Un Shell fait trois choses principales au cours de sa vie :
 - Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "|") 
 
 
-| Id | Spécification | État | Criticisme | Effort | Stabilité | 
-| -- | --------------   | ----  | -----------  | ------- | ---------  | 
+| Id | Spécification | État | Criticisme | Stabilité | 
+| -- | --------------   | ----  | -----------  | ------- | 
 | 1 | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Proposé | Critique | Stable | 
 | 2 | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Proposé | Critique | Stable | 
 | 3 |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Proposé | Critique | Stable | 
@@ -127,9 +127,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 **Criticisme**  
 ` Critique : la spécification doit être implémentée sinon le système n’est pas accepté`  
 `Important : la spécification peut être omise mais son omission affecterait considérablement l’utilisabilité du système`  
-` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`  
-**Effort**  
-`Estimation approximative des ressources et du temps nécessaire pour la spécification`  
+` Utile : la spécification peut être omise et son omission n’a pas un grand impact sur le système`   
 **Stabilité**  
 `La probabilité que la spécification change dans le temps`  
  Ces attributs évoluent au fil du temps ( avancement du projet )
