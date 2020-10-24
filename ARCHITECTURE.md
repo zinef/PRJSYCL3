@@ -82,7 +82,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 6. Exécution des  commandes en utilisant les processus avec la famille des **exec** **( execl , execv ...)** et **fork** .
 7. Attendre la prochaine entrée .
 ## Diagramme du processus de fonctionnement 
-![](./Images/DiagrammeProcessus.png)
+![](./Images/DiagrammeProcessus.png)  
 
 ## Outils techniques  pour l'implémentation 
 + La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
@@ -93,7 +93,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 + pour plus de détails … (voir le code source)
 
 ## Expression de besoins 
-### Spécifications fonctionnels 
+### Spécifications fonctionnelles 
 - Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver.
 - Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel 
 - Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball.
@@ -141,7 +141,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 
 ## Cas d'utilisations 
 Un diagramme de cas d'utilisation de ce Shell (simplifié au maximum)
-![](./Images/CasDUtilisation.png)
+![](./Images/UseCases.png)
 
 ## Récapitulatif 
 Pour un récapitulatif consistant y'a pas mieux qu'un **_`diagramme de séquence`_** pour représenter tout ça 
