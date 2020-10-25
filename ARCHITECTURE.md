@@ -173,7 +173,7 @@ struct posix_header
  char junk[12];                /* 500 */
 };
 ```
-2. Tableau de chaines de caractères des commandes existante dans le Shell
+2. Tableau de chaines de caractères des commandes existantes dans le Shell
 ```c
 ...
 #define NBCMD 4
@@ -195,7 +195,7 @@ struct Commande{
 	char *optionsCommande[NBOPTIONS];
 };
 ```
-avec `NBPARAMS` et `NBOPTIONS` le nombre de paramètres et le nombre d'option , respectivement  , d'une commande donnée.
+avec `NBPARAMS` et `NBOPTIONS` le nombre de paramètres et le nombre d'options , respectivement  , d'une commande donnée.
 
 ### Prototypes de fonctions 
 Les prototypes de fonctions définies pour l'instant sont les suivantes : 
@@ -210,6 +210,6 @@ void recupArgs(char *entree,char **listeArgs);
 int commandeValide(char **listeArgs);
 int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);
 ```
-_`NOTA:pour plus de détails voir le code ...`_
+_`NOTABENE:pour plus de détails voir le code ...`_  
 Les fonctionnalités de cette première partie sont exactement le squelette du Shell , cela veut dire les fonctions et procédures qui vont être utilisées pour exécuter par las suite  les commandes qui vont manipuler des fichier *.tar .
  
