@@ -7,13 +7,14 @@
 #include <stdlib.h> //stdlib pour les fonctions exit et getenv
 #include <sys/types.h> 
 #include <sys/wait.h> 
-/*L'utilisation des deux bibliothèques ci-dessous n'est en aucun cas une utilisation définitif , c'est juste une utilisation 
-pour le débougage des premières fonctionnalités qui regroupe essentiellement des fonctionnalités pour manipuler n'importe quel shell
+/*L'utilisation des deux bibliothèques ci-dessous n'est en aucun cas une utilisation définitive , c'est juste une utilisation 
+pour le débougage des premières fonctionnalités qui regroupent essentiellement des fonctionnalités pour manipuler n'importe quel shell
 et en cas particulier un shell pour les archives Tar (notre premier rendu consiste en les fonctions qui vont manipuler par la suite les 
-commandes spécialisées dans les fichiers *.tar), c'est pour répondre à spécification de sauvgarde de l'historique de commande fournies par
+commandes spécialisées dans les fichiers *.tar), c'est pour répondre à la spécification de sauvgarde de l'historique de commande fournies par
 ces deux bibliothèques */
 #include <readline/readline.h>
 #include <readline/history.h>
+
 #include <errno.h>
 
 #define ever ;;

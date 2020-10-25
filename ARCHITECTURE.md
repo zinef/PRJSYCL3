@@ -145,4 +145,71 @@ Un diagramme de cas d'utilisation de ce Shell (simplifié au maximum)
 
 ## Récapitulatif 
 Pour un récapitulatif consistant y'a pas mieux qu'un **_`diagramme de séquence`_** pour représenter tout ça 
-![](./Images/Diagramme_de_Séquence.png) 
+![](./Images/Diagramme_de_Séquence.png)  
+
+## Structures de données et prototypes de fonctions
+### Structures de données
+
+1. la structure _`struct posix_header`_ fourni dans le _header_ `tar.h`  définie déjà auparavant .
+```c
+struct posix_header
+{                              /* byte offset */
+ char name[100];               /*   0 */
+ char mode[8];                 /* 100 */
+ char uid[8];                  /* 108 */
+ char gid[8];                  /* 116 */
+ char size[12];                /* 124 */
+ char mtime[12];               /* 136 */
+ char chksum[8];               /* 148 */
+ char typeflag;                /* 156 */
+ char linkname[100];           /* 157 */
+ char magic[6];                /* 257 */
+ char version[2];              /* 263 */
+ char uname[32];               /* 265 */
+ char gname[32];               /* 297 */
+ char devmajor[8];             /* 329 */
+ char devminor[8];             /* 337 */
+ char prefix[155];             /* 345 */
+ char junk[12];                /* 500 */
+};
+```
+2. Tableau de chaines de caractères des commandes existante dans le Shell
+```c
+...
+#define NBCMD 4
+...
+char *listeDesCommande[NBCMD]={"cd","ls","pwd","mkdir"};
+```
+avec `NBCMD` nombre de commandes dans le Shell .
+3. la structure `commande`qui définie une commande avec son nom , ses paramètres et ses options 
+```c 
+...
+#define NBPARAMS 10
+#define NBOPTIONS 10
+...
+struct Commande{
+	char nomCommande[30];
+	int nbParamsEffect;
+	char parametresCommande[NBPARAMS];
+	int nbOptionsEffect;
+	char *optionsCommande[NBOPTIONS];
+};
+```
+avec `NBPARAMS` et `NBOPTIONS` le nombre de paramètres et le nombre d'option , respectivement  , d'une commande donnée.
+
+### Prototypes de fonctions 
+Les prototypes de fonctions définies pour l'instant sont les suivantes : 
+```c
+int trouverPipe(char *entree,char **commandesSiPipe);
+void Initialiser_shell();
+int recupEntry(char *ch);
+void executerCmdSimple(char *cmd[]);
+void executerCmdComplexe(char *cmd[]);
+void my_pwd();
+void recupArgs(char *entree,char **listeArgs);
+int commandeValide(char **listeArgs);
+int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);
+```
+_`NOTA:pour plus de détails voir le code ...`_
+Les fonctionnalités de cette première partie sont exactement le squelette du Shell , cela veut dire les fonctions et procédures qui vont être utilisées pour exécuter par las suite  les commandes qui vont manipuler des fichier *.tar .
+ 
