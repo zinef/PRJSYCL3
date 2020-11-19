@@ -93,7 +93,156 @@ void my_pwd(){
 }
 
 
+/***
+	my_pwd_global : la procédure qui affiche le répértoire courant , dans le cas des fichier tar
 
+***/
+void my_pwd_global(){
+	if (in_tar){
+		printf("Répertoire : %s \n",pwd_global);
+	}else{
+		my_pwd();
+	}
+}
+/***
+	my_cd: la procedure qui permet de se déplacer dans un répértoire (un chemin qui n'inclus pas des tar)
+	entrées: path
+	sorties:void
+***/
+void my_cd(char *path){
+		char *pwd= getcwd(NULL, 0);
+		char *chemin=strcat(pwd,path);
+		int flag=chdir(chemin);
+		if(flag ==0) {
+			
+			chdir(pwd);
+		}
+}
+/***
+	listar: liste des fichiers et répértoire dans un fichier tar
+	
+
+***/
+int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
+	
+	int fd=open(nomfic,O_RDONLY);
+	if (fd<0){
+		perror("erruer dans l'ouverture");
+		exit(errno);
+	}
+	char buf[513];
+	int EnteteAlire=0;
+	int stop=0;
+	int size=0;
+	int n=0;
+	int ret=0;
+	
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+		//printf("entete à lire = %d\n",EnteteAlire);
+		st= (struct posix_header * ) buf;
+		//printf("nom fichier = %s\n",st->name);
+		
+		if((st->name)[0] == '\0'){
+			stop=1;
+			printf("c'est Carré !!\n");
+		}
+		if (strcmp(st->name,path)==0){
+			stop=1;
+			*entete_lu=EnteteAlire;
+		}
+		sscanf(st->size,"%o",&size);
+		//printf("taille du fichier = %d\n",size);
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1;
+		}
+
+		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+	}
+	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
+		//printf("success\n");
+		ret=1;
+	}
+
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+	close(fd);
+
+	return ret;
+
+}
+/***
+	verifier_exist_rep: la fonction avec laquelle on verifie si le sous répértoire donnée en paramètre existe sois dans un répértoire ordinaire ou bien dans un répértoire archivée
+	entrées: path
+	sorties: <=0 s'il n'existe pas ,1 répértoire simple ,2 répértoire incluant un tar
+
+***/
+int verifier_exist_rep(char* path){
+	int ret=0;
+	int *entete_lu;
+	if(in_tar){
+		//tester si path existe dans les répértoires du tar actuel 
+		char tar_courant[1024];
+		strcpy(tar_courant,tar_actuel);//position courante
+		ret=verif_exist_rep_in_tar(tar_courant,path,entete_lu);
+		if(ret) ret++;
+	}else{
+		char *pwd= getcwd(NULL, 0);
+		char *chemin=strcat(pwd,path);
+		int flag=chdir(chemin);
+		if(flag ==0) {
+			ret=1;
+			chdir(pwd);
+		}else{
+			//chercher dans les tar existant dans le répertoire courant
+			//pour chaque fichier tar , on appel verif_exist_rep_in_tar
+			char file[30]="."; 
+			struct stat sb;
+			if(stat(file, &sb)==-1){
+    			perror("stat");
+    			exit(1);
+  			}
+	
+
+		}
+	}
+}
+/***
+
+	my_cd_global: la procedure avec laquelle on change de répértoire de travaille 
+	entrées : chaine de caractère , path
+	sorties : void
+***/
+
+void my_cd_global(char *path){
+	//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant , sinon si il existe dans un des tar de cette hièrarchie
+	int check_path=verifier_exist_rep(path);
+	char wd[1024];
+	//si le répértoire existe inclus un tar in_tar=1
+	//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
+	//sinon erreur
+	if(check_path>0){
+		//déplacement
+		if(in_tar){//wd est dans un tar et l'arrivée est dans un tar
+			//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
+			//modification de pwd_global
+		
+		}else{
+			if(strcmp(wd,"./")){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
+				//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
+				//modification de pwd_global
+			}else{
+
+				my_cd(path);
+			}
+		}
+	}
+}
 /***
 	trouverPipes : la fonction qui trouve les pipes et retournes les commandes séparées 
 	@ entrées : entrée de ligne de commande et un tableau dans lequel on va récupérer les commandes séparées
@@ -212,7 +361,19 @@ int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe){
 		return 1+complexe;
 	}
 }
+/***
+	recup_ext: la fonction qui récupère l'extention d'un fichier 
+	entrées: fichier
+	sorties: extension
 
-
+	on va se contenter de tester l'extention du fichier pour savoir si c'est un tar 
+	c'est pas toujours vrai mais on va supposer que y'a pas de fcihier non intègre 
+	car l'utilisation de la commande tar est interdite on pourras pas tester l'integrité d'un fichier tar autrement
+***/
+const char *recup_ext(const char *filename) {
+    const char *dot = strrchr(filename, '.');
+    if(!dot || dot == filename) return "";
+    return dot + 1;
+}
 
 
