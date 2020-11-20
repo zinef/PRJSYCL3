@@ -33,6 +33,7 @@ ces deux bibliothèques */
 char pwd_global[1024]="./";//initialisation : répertoire ou le shell se lance
 int in_tar=0; 
 char tar_actuel[1024]="test.tar";
+char strTmp[255]; 
 /*la liste des commandes valables dans le Shell */
 char *listeDesCommande[NBCMD]={"cd","ls","pwd","mkdir"};
 /*la structure d'une commande */
@@ -57,6 +58,8 @@ void my_pwd_global();
 void my_cd(char *fic);
 void my_cd_global(char *path);
 const char *recup_ext(const char *filename);
+int verifier_exist_rep(char path[100]);
 int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu);
+char *strrev(char *str);
 
 #endif //__OUR_SHELL_ZFI_INCLUDED__

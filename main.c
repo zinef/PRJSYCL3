@@ -94,10 +94,22 @@ int main(int argc,char **argv){
 	printf("%s\n", recup_ext("test.tar"));
 */
 
-	//test de la fonction verif_exist_rep_in_tar 
-int *entete_lu;
+/*	//test de la fonction verif_exist_rep_in_tar 
+	int *entete_lu;
 	int res=verif_exist_rep_in_tar(argv[1],argv[2],entete_lu);
 	printf("%d ,%d\n",res,*entete_lu);
+*/
 
+	//test de cd
+	//test de verifier_exist_rep
+	//in_tar=1;
+	
+	char pwd[1024]; 
+    	getcwd(pwd, sizeof(pwd)); 
+	printf("pwd = %s\n",pwd);
+	int ret = verifier_exist_rep(argv[1]);
+	printf("val ret = %d\n",ret);
+    	getcwd(pwd, sizeof(pwd)); 
+	printf("pwd = %s\n",pwd);
 	return 0;
 }

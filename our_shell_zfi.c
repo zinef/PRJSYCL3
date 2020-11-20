@@ -177,40 +177,71 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 
 }
 /***
+	strrev : fonction qui renverse l'ordre d'une chaine de caractère
+***/
+char *strrev(char *str) {
+	  
+      char *p1, *p2;
+      strcpy(strTmp,str);
+ 
+      if (! strTmp || ! *str) return strTmp;
+      for (p1 = strTmp, p2 = strTmp + strlen(str) - 1; p2 > p1; ++p1, --p2) {
+            *p1 ^= *p2;
+            *p2 ^= *p1;
+            *p1 ^= *p2;
+      }
+      return strTmp;
+} 
+/***
 	verifier_exist_rep: la fonction avec laquelle on verifie si le sous répértoire donnée en paramètre existe sois dans un répértoire ordinaire ou bien dans un répértoire archivée
 	entrées: path
 	sorties: <=0 s'il n'existe pas ,1 répértoire simple ,2 répértoire incluant un tar
 
 ***/
-int verifier_exist_rep(char* path){
+int verifier_exist_rep(char path[100]){
 	int ret=0;
-	int *entete_lu;
+	int *entete_lu=NULL;
 	if(in_tar){
 		//tester si path existe dans les répértoires du tar actuel 
-		char tar_courant[1024];
-		strcpy(tar_courant,tar_actuel);//position courante
-		ret=verif_exist_rep_in_tar(tar_courant,path,entete_lu);
+		
+		ret=verif_exist_rep_in_tar(tar_actuel,path,entete_lu);
 		if(ret) ret++;
 	}else{
 		char *pwd= getcwd(NULL, 0);
-		char *chemin=strcat(pwd,path);
+		char origin[100]="";
+		strcpy(origin,pwd);
+		char *chemin=strcat(pwd,"/");
+		strcat(chemin,path);
 		int flag=chdir(chemin);
-		if(flag ==0) {
+		if(flag == 0) {
 			ret=1;
-			chdir(pwd);
+			chdir(origin);
 		}else{
-			//chercher dans les tar existant dans le répertoire courant
-			//pour chaque fichier tar , on appel verif_exist_rep_in_tar
-			char file[30]="."; 
-			struct stat sb;
-			if(stat(file, &sb)==-1){
-    			perror("stat");
-    			exit(1);
-  			}
-	
-
+			//tester si path inclus un tar 
+			//on cherche à déplacer dans un tar 
+			int i=strlen(strstr(path,".tar/"));
+			if(i>0){
+				char sub_path[100]="";
+				strncpy(sub_path,&path[strlen(path) - i + 5], i);
+				//récupération du nom du fichier tar
+				char tmp_tar[100]="";
+				char *rev;
+				int j=0;
+				while(path[strlen(path) -i-1] != '/'){
+					tmp_tar[j]=path[strlen(path) -i - 1];
+					i++;
+					j++;
+				}
+				rev=strrev(tmp_tar);
+				strcpy(tmp_tar,rev);
+				strcat(tmp_tar,".tar");
+				int *entete_lu2;
+				ret=verif_exist_rep_in_tar(tmp_tar,sub_path,entete_lu2);
+				if(ret) ret++;
+			}
 		}
 	}
+	return ret;
 }
 /***
 
