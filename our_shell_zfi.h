@@ -58,8 +58,9 @@ void my_pwd_global();
 void my_cd(char *fic);
 void my_cd_global(char *path);
 const char *recup_ext(const char *filename);
-int verifier_exist_rep(char path[100]);
+int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]);
 int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu);
 char *strrev(char *str);
+void deplacement_in_tar(char *path,int entete_a_lire);
 
 #endif //__OUR_SHELL_ZFI_INCLUDED__

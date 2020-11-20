@@ -110,16 +110,57 @@ void my_pwd_global(){
 	sorties:void
 ***/
 void my_cd(char *path){
-		char *pwd= getcwd(NULL, 0);
+		char pwd[1024];
+	    getcwd(pwd,sizeof(pwd));
+		strcat(pwd,"/");
 		char *chemin=strcat(pwd,path);
 		int flag=chdir(chemin);
 		if(flag ==0) {
 			
 			chdir(pwd);
+			strcpy(pwd_global,"");
+			strcpy(pwd_global,chemin);
+			strcpy(tar_actuel,"");
+			in_tar=0;
 		}
 }
 /***
-	listar: liste des fichiers et répértoire dans un fichier tar
+	déplacement_in_tar : fonction pour se déplacer dans le tar (personalisée pour cd)
+
+
+***/
+void deplacement_in_tar(char *path,int entete_a_lire){
+
+	//à modifier
+	int fd=open(tar_actuel,O_RDONLY);
+	if (fd<0){
+		perror("erruer dans l'ouverture");
+		exit(errno);
+	}
+	//seek
+	lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET);
+	//lecture et bufferisation du répértoire 
+	int size;
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+	char buf[513];
+	int n=read(fd,buf,BLOCKSIZE);
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+	st= (struct posix_header * ) buf;
+	printf("nom rép :%s\n",st->name);
+	sscanf(st->size,"%o",&size);
+	char *buf_rep=malloc(size);
+	n=read(fd,buf_rep,size);
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+	close(fd);
+}
+/***
+	verif_exist_rep_in_tar: liste des fichiers et répértoire dans un fichier tar
 	
 
 ***/
@@ -195,17 +236,26 @@ char *strrev(char *str) {
 /***
 	verifier_exist_rep: la fonction avec laquelle on verifie si le sous répértoire donnée en paramètre existe sois dans un répértoire ordinaire ou bien dans un répértoire archivée
 	entrées: path
-	sorties: <=0 s'il n'existe pas ,1 répértoire simple ,2 répértoire incluant un tar
+	sorties: <=0 s'il n'existe pas ,1 répértoire simple ,2 répértoire incluant un tar ,3 répértoire incluant un tar pour la première fois
 
 ***/
-int verifier_exist_rep(char path[100]){
+int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 	int ret=0;
-	int *entete_lu=NULL;
 	if(in_tar){
 		//tester si path existe dans les répértoires du tar actuel 
 		
 		ret=verif_exist_rep_in_tar(tar_actuel,path,entete_lu);
-		if(ret) ret++;
+		if(ret) {
+			ret++;
+			int i=strlen(strstr(pwd_global,".tar/"));
+			int k=0;
+			int j;
+			for(j=strlen(pwd_global) - i + 5 ;j<strlen(pwd_global) - i + 5+ strlen(path);j++){
+				pwd_global[j]=path[k];
+				k++;
+			}
+			pwd_global[j+1]='\0';
+		}
 	}else{
 		char *pwd= getcwd(NULL, 0);
 		char origin[100]="";
@@ -218,7 +268,10 @@ int verifier_exist_rep(char path[100]){
 			chdir(origin);
 		}else{
 			//tester si path inclus un tar 
-			//on cherche à déplacer dans un tar 
+			//on cherche à se déplacer dans un tar 
+			strcpy(path,"");
+			strcpy(path,chemin);
+			strcpy(chemin_absolu,path);
 			int i=strlen(strstr(path,".tar/"));
 			if(i>0){
 				char sub_path[100]="";
@@ -235,9 +288,18 @@ int verifier_exist_rep(char path[100]){
 				rev=strrev(tmp_tar);
 				strcpy(tmp_tar,rev);
 				strcat(tmp_tar,".tar");
-				int *entete_lu2;
-				ret=verif_exist_rep_in_tar(tmp_tar,sub_path,entete_lu2);
-				if(ret) ret++;
+				
+				ret=verif_exist_rep_in_tar(tmp_tar,sub_path,entete_lu);
+				if(ret){
+					ret++;
+					ret++;
+					//modification des variable globales tar actuel et in_tar et pwd_global
+					strcpy(tar_actuel,"");
+					strcpy(tar_actuel,tmp_tar);
+					in_tar=1;
+					strcpy(pwd_global,"");
+					strcpy(pwd_global,path);
+				}
 			}
 		}
 	}
@@ -252,8 +314,11 @@ int verifier_exist_rep(char path[100]){
 
 void my_cd_global(char *path){
 	//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant , sinon si il existe dans un des tar de cette hièrarchie
-	int check_path=verifier_exist_rep(path);
+	int *entete_lu=malloc(sizeof(int));
+	char chemin_absolu[100]="";
+	int check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
 	char wd[1024];
+	
 	//si le répértoire existe inclus un tar in_tar=1
 	//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
 	//sinon erreur
@@ -262,16 +327,20 @@ void my_cd_global(char *path){
 		if(in_tar){//wd est dans un tar et l'arrivée est dans un tar
 			//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
 			//modification de pwd_global
-		
+			// check_path doit être à 1
+			deplacement_in_tar(chemin_absolu,*entete_lu);
 		}else{
-			if(strcmp(wd,"./")){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
+			if(check_path == 3){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
 				//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
 				//modification de pwd_global
+				deplacement_in_tar(chemin_absolu,*entete_lu);
 			}else{
 
 				my_cd(path);
 			}
 		}
+	}else{
+		perror("Le chemin n'existe pas");
 	}
 }
 /***

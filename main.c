@@ -103,13 +103,27 @@ int main(int argc,char **argv){
 	//test de cd
 	//test de verifier_exist_rep
 	//in_tar=1;
-	
+	int *entete_lu=malloc(sizeof(int));
 	char pwd[1024]; 
     	getcwd(pwd, sizeof(pwd)); 
 	printf("pwd = %s\n",pwd);
-	int ret = verifier_exist_rep(argv[1]);
+	/*int ret = verifier_exist_rep(argv[1],entete_lu);
 	printf("val ret = %d\n",ret);
     	getcwd(pwd, sizeof(pwd)); 
 	printf("pwd = %s\n",pwd);
+	printf("entete lu =%d\n",*entete_lu);*/
+	/*printf("Cd test \n");
+	my_cd_global(argv[1]);
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);
+	my_cd_global("Images/");
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);*/
+	my_cd_global("Drafts");
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);
 	return 0;
 }
