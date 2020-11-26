@@ -127,7 +127,6 @@ void my_cd(char *path){
 /***
 	déplacement_in_tar : fonction pour se déplacer dans le tar (personalisée pour cd)
 
-
 ***/
 void deplacement_in_tar(char *path,int entete_a_lire){
 
@@ -218,6 +217,12 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 
 }
 /***
+	process_pwd_global : fonction qui corrige pwd_global en un chemin absolu après modification
+	entrées : pwd_global
+	sorties : 
+
+***/
+/***
 	strrev : fonction qui renverse l'ordre d'une chaine de caractère
 ***/
 char *strrev(char *str) {
@@ -288,7 +293,9 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 				rev=strrev(tmp_tar);
 				strcpy(tmp_tar,rev);
 				strcat(tmp_tar,".tar");
-				
+				char parent_dir_of_tar[100]="";
+				strncpy(parent_dir_of_tar,chemin_absolu,strlen(chemin_absolu)-i-1);
+				chdir(parent_dir_of_tar);
 				ret=verif_exist_rep_in_tar(tmp_tar,sub_path,entete_lu);
 				if(ret){
 					ret++;
@@ -313,35 +320,36 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 ***/
 
 void my_cd_global(char *path){
-	//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant , sinon si il existe dans un des tar de cette hièrarchie
+	
+//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant , sinon si il existe dans un des tar de cette hièrarchie
 	int *entete_lu=malloc(sizeof(int));
 	char chemin_absolu[100]="";
 	int check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
 	char wd[1024];
-	
-	//si le répértoire existe inclus un tar in_tar=1
-	//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
-	//sinon erreur
 	if(check_path>0){
-		//déplacement
-		if(in_tar){//wd est dans un tar et l'arrivée est dans un tar
-			//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
-			//modification de pwd_global
-			// check_path doit être à 1
-			deplacement_in_tar(chemin_absolu,*entete_lu);
-		}else{
-			if(check_path == 3){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
-				//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
-				//modification de pwd_global
-				deplacement_in_tar(chemin_absolu,*entete_lu);
-			}else{
 
-				my_cd(path);
-			}
+			//si le répértoire existe inclus un tar in_tar=1
+			//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
+			//sinon erreur
+	
+				//déplacement
+				if(in_tar){//wd est dans un tar et l'arrivée est dans un tar
+					//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
+					//modification de pwd_global
+					// check_path doit être à 1
+					deplacement_in_tar(chemin_absolu,*entete_lu);
+				}else{
+					if(check_path == 3){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
+						//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
+						//modification de pwd_global
+						deplacement_in_tar(chemin_absolu,*entete_lu);
+					}else{
+
+						my_cd(path);
+					}
+				}
 		}
-	}else{
-		perror("Le chemin n'existe pas");
-	}
+	
 }
 /***
 	trouverPipes : la fonction qui trouve les pipes et retournes les commandes séparées 

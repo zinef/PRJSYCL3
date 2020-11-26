@@ -99,7 +99,7 @@ int main(int argc,char **argv){
 	int res=verif_exist_rep_in_tar(argv[1],argv[2],entete_lu);
 	printf("%d ,%d\n",res,*entete_lu);
 */
-
+/*
 	//test de cd
 	//test de verifier_exist_rep
 	//in_tar=1;
@@ -116,14 +116,15 @@ int main(int argc,char **argv){
 	my_cd_global(argv[1]);
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
-	printf("in tar = %d\n",in_tar);
-	my_cd_global("Images/");
+	printf("in tar = %d\n",in_tar);*/
+	/*my_cd_global("Images/");
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
 	printf("in tar = %d\n",in_tar);*/
-	my_cd_global("Drafts");
+	/*my_cd_global("test.tar/Drafts/\0");
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
-	printf("in tar = %d\n",in_tar);
+	printf("in tar = %d\n",in_tar);*/
+*/
 	return 0;
 }
