@@ -76,6 +76,7 @@ int check_dir(char header_name[100]){
     char name[100];
     if(in_tar == 1){
         strncpy(name,header_name,strlen(pwd));
+        name[strlen(pwd)]='\0';
         return strcmp(pwd,name);
     }return 0;
 }
@@ -113,31 +114,22 @@ int get_file(int fd,char file_name[100], posix_header *header){
     read(fd,Buffer,BLOCKSIZE);cpt++;
     while (Buffer[0]!='\0' && Buffer[0]!=EOF)
     {   
-        get_entete_info(header, Buffer);
-        if(check_dir(header->name) == 0 ){
-            if(cmp_name(header->name,file_name) == 0){
-                if(header->typeflag == '5'){
-                    write(1,"cat: ",5);
-                    write(1,file_name,strlen(file_name));
-                    write(1,": Is a directory\n",18);
-                    lseek(fd,-(cpt*BLOCKSIZE),SEEK_CUR);
-                    return 0;
-                }
-                return cpt;
-            }else{
-                free(header);
-                header = malloc(sizeof(posix_header));
-                i = get_file_size(header);
-                lseek(fd,i*BLOCKSIZE,SEEK_CUR);cpt+=i;
-                read(fd,Buffer,BLOCKSIZE);cpt++;
+        get_entete_info(header, Buffer);        
+        if(cmp_name(header->name,file_name) == 0){
+            if(header->typeflag == '5'){
+                write(1,"cat: ",5);
+                write(1,file_name,strlen(file_name));
+                write(1,": Is a directory\n",18);
+                lseek(fd,-(cpt*BLOCKSIZE),SEEK_CUR);
+                return 0;
             }
+            return cpt;
         }else{
             free(header);
-            lseek(fd,-(cpt*BLOCKSIZE),SEEK_CUR);
-            write(1,"cat: ",5);
-            write(1,file_name,strlen(file_name));
-            write(1,": No such file or directory\n",29);
-            return 0;
+            header = malloc(sizeof(posix_header));                
+            i = get_file_size(header);
+            lseek(fd,i*BLOCKSIZE,SEEK_CUR);cpt+=i;
+            read(fd,Buffer,BLOCKSIZE);cpt++;
         }
     }
     free(header);
@@ -148,27 +140,23 @@ int get_file(int fd,char file_name[100], posix_header *header){
     return 0;
 }
 
-void cat_out_tar(char file_name[100]){
+void cat_out_tar(char file_name[100],char ch[100]){
     int i;
     struct stat sb;    
-    
-    if(stat(file_name, &sb)==-1){
-        perror("stat");
-        return;
+    int fd = open(file_name,O_RDONLY);//printf("file_name : %s ",file_name);
+
+    if(fstat(fd, &sb)==-1){
+            perror(ch);
+            return ;
     }
-    if(S_ISDIR(sb.st_mode)){
-        write(1,"cat: ",5);
-        write(1,file_name,strlen(file_name));
-        write(1,": Is a directory\n",18);
-    }else{
-        int fd = open(file_name,O_RDONLY);
+        
         while ((i=read(fd, Buffer,sizeof(Buffer)))>0)
         {
             write(1,Buffer,i);
         }
         close(fd);
         return ;
-    }
+    
  
 }
 
@@ -183,8 +171,9 @@ void cat_in_tar(int fd,char file_name[100]){
             write(1,Buffer,BLOCKSIZE);
         }
         lseek(fd,-(cpt*BLOCKSIZE),SEEK_CUR);
+        free(header);
     }
-    free(header);
+   
 }
 
 int check_if_in_tar(char ch[100]){
@@ -202,47 +191,175 @@ int open_tar_file(char ch[100]){
     strcpy(s,ch);
     int i = strlen(strstr(s,".tar/"));
     strncpy(str2,ch,strlen(ch) - i + 4);
+    str2[strlen(ch) - i + 4]='\0';
+    
     return open(str2,O_RDONLY);
 
 }
-///
-void cat(int fd_tar,char ch[100]){//je surprime fd_tar
-    int fd;int i;
-    char str[100];
-    strcpy(str,ch);
-    if(in_tar == 0){
-        if(strstr(str,".tar/")==NULL){
-            cat_out_tar(str);
-        }else{
-            fd = open_tar_file(str);//if != 0 else faux chaine []
-            i = strlen(strstr(ch,".tar/"));
-            strncpy(str , &ch[strlen(ch) - i + 5] , i);
-            cat_in_tar(fd,str);
-            close(fd);
-        }
-    }else{//je vais pwd et open_tar_file ....
-        //fd = open_tar_file(str);//if != 0 else faux chaine []
-        i = strlen(strstr(ch,".tar/"));
-        if( i != 0){strncpy(str , &ch[strlen(ch) - i + 5] , i);}
-        else{strcpy(str,ch);}
-        cat_in_tar(fd_tar,str);
-        //close(fd);
+
+void get_ch_absolu(char *ch){
+    char res[100];
+    if(ch[0]=='/'){
+        return;
     }
+    if(strlen(ch)>strlen(pwd)){
+        strncpy(res,ch,strlen(pwd));
+        res[strlen(pwd)]='\0';
+        if( strcmp(pwd,res) == 0 ){
+            return ;
+        }
+    }
+    strcpy(res,pwd);
+    int i=strlen(res);
+    if(res[i-1]!='/'){
+        res[i]  ='/';
+        res[i+1] = '\0';
+    }
+    strcat(res,ch);
+    strcpy(ch,res);
+    return ; 
 }
 
+void cat(char ch[100]){
+    int fd;int i;
+    struct stat sb,sp;    
+    char str[100],str2[100];
+    strcpy(str,ch);
+    get_ch_absolu(str);
+    if(in_tar == 0 || strstr(str,".tar/")==NULL){
+        if(strstr(str,".tar/")==NULL){
+            cat_out_tar(str,ch);
+            return;
+        }
+    }
+    fd = open_tar_file(str);
+    if(fstat(fd, &sb)==-1){
+        perror(ch);
+        return ;
+    }
+    i = strlen(strstr(str,".tar/"));
+    strncpy(str2 , &str[strlen(str) - i + 5] , i);
+    str2[i]='\0';
+    cat_in_tar(fd,str2);
+    close(fd);
+    
+}
+/// test a : le fichier existe  /////////////////////////
+/// test b : le fichier n'existe pas  ///////////////////
+///test 1 : 
+//  a / cat sur un fichier qui n est pas dans tar avec un chemain absolu
+//  b / cat sur un fichier qui n est pas dans tar avec un chemain absolu sur un fichier n existe pas
+/*
 int main(int argc, char *argv[]){
     posix_header *header;
     int size;
     in_tar = 0;
     char ch[100];
-    strcpy(ch,"../my project/../my project/test.tar/tata");
-    int fd = open("./test.tar",O_RDONLY);
-    strcpy(pwd,"tete/");
-    cat(fd,ch);
-    close(fd);
+    //strcpy(ch,"/home/islam/Desktop/my project/main_cat.c");/// a
+    strcpy(ch,"/home/islam/Desktop/my project/do_not_existe_file.c");/// b
+
+    strcpy(pwd,"/home/islam/Desktop/tp");
+    cat(ch);
     
     return 0;
 }
+*/
+///test 2 : 
+//  a / cat sur un fichier qui n est pas dans tar avec un chemain relative
+//  b / cat sur un fichier qui n est pas dans tar avec un chemain relative faux
+/*
+int main(int argc, char *argv[]){
+    posix_header *header;
+    int size;
+    in_tar = 0;
+    char ch[100];
+    strcpy(ch,"my project/main_cat.c");/// a
+    //strcpy(ch,"/Desktop/my project/main_cat.c"); /// b
 
+    strcpy(pwd,"/home/islam/Desktop");
+    cat(ch);
+    
+    return 0;
+}
+*/
+///test 3 : 
+//  a / cat sur un fichier qui est dans tar avec un chemain abslu
+//  b / cat sur un fichier qui est dans tar avec un chemain abslu sur un fichier qui existe pas
+/*
+int main(int argc, char *argv[]){
+    posix_header *header;
+    int size;
+    in_tar = 0;
+    char ch[100];
+    strcpy(ch,"/home/islam/Desktop/my project/test.tar/tata/tatadpll (1) (copy).ml");/// a
+    //strcpy(ch,"/home/islam/Desktop/my project/test.tar/titi/titidpll(1) (another copy).ml");/// a
+    //strcpy(ch,"/home/islam/Desktop/my project/test.tar/tata/do_not_existe_file.c"); /// b
+    //strcpy(ch,"/home/islam/Desktop/my project/test.tar/titi/do_not_existe_file.c"); ///b
+    
+    strcpy(pwd,"/home/islam/Desktop");
+    cat(ch);
+    
+    return 0;
+}
+*/
+///test 4 : 
+//  a / cat sur un fichier qui est dans tar avec un chemain relative dans un tar
+//  b / cat sur un fichier qui est dans tar avec un faux chemain relative dans un tar
+/*
+int main(int argc, char *argv[]){
+    posix_header *header;
+    int size;
+    in_tar = 1;
+    char ch[100];
+    strcpy(ch,"tatadpll (1) (copy).ml");/// a1
+    //strcpy(ch,"titidpll(1) (another copy).ml");/// a2
+    
+    //strcpy(ch,"titidpll(1) (another copy).ml");/// b1
+    //strcpy(ch,"tatadpll (1) (copy).ml");/// b2
+    
 
+    strcpy(pwd,"/home/islam/Desktop/my project/test.tar/tata");/// a1 et b1
+    //strcpy(pwd,"/home/islam/Desktop/my project/test.tar/titi");/// a2 et b2
+    cat(ch);
+    
+    return 0;
+}
+*/
+///test 5 : 
+///  a / cat sur un fichier qui n' est pas dans tar avec un chemain absolu et le docier acctuel et dans tar
+///  b / cat sur un fichier qui n' est pas dans tar avec un faux chemain absolu et le docier acctuel et dans tar
+/*
+int main(int argc, char *argv[]){
+    posix_header *header;
+    int size;
+    in_tar = 1;
+    char ch[100];
+    strcpy(ch,"/home/islam/Desktop/my project/main_cat.c");/// a
+    //strcpy(ch,"/home/islam/Desktop/my project/do_not_existe_file.c");/// b
 
+    strcpy(pwd,"/home/islam/Desktop/my project/test.tar/tata");
+    cat(ch);
+    
+    return 0;
+}
+*/
+
+///test 6 : 
+// a / cat sur un fichier qui est dans tar avec un chemain absolu out un tar
+/*
+int main(int argc, char *argv[]){
+    posix_header *header;
+    int size;
+    in_tar = 1;
+    char ch[100];
+    strcpy(ch,"/home/islam/Desktop/my project/test2.tar/tata/tatadpll (1) (another copy).ml");
+    
+    strcpy(pwd,"/home/islam/Desktop/my project/test.tar/tata");
+    cat(ch);
+    
+    return 0;
+}
+*/
+
+/******************************************************************************************************/
+///pour le cas d utulisation des .. / pas encore traiter ...
