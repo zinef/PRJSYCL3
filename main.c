@@ -3,7 +3,6 @@
 
 
 
-
 int main(int argc,char **argv){
 /*
 	//Programme principal
@@ -89,6 +88,43 @@ int main(int argc,char **argv){
 				printf("%s \n",listeArgsPipe[i]);
 		}
 	}
+*/
+/*
+	//test de la fonction recup_extension
+	printf("%s\n", recup_ext("test.tar"));
+*/
+
+/*	//test de la fonction verif_exist_rep_in_tar 
+	int *entete_lu;
+	int res=verif_exist_rep_in_tar(argv[1],argv[2],entete_lu);
+	printf("%d ,%d\n",res,*entete_lu);
+*/
+/*
+	//test de cd
+	//test de verifier_exist_rep
+	//in_tar=1;
+	int *entete_lu=malloc(sizeof(int));
+	char pwd[1024]; 
+    	getcwd(pwd, sizeof(pwd)); 
+	printf("pwd = %s\n",pwd);
+	/*int ret = verifier_exist_rep(argv[1],entete_lu);
+	printf("val ret = %d\n",ret);
+    	getcwd(pwd, sizeof(pwd)); 
+	printf("pwd = %s\n",pwd);
+	printf("entete lu =%d\n",*entete_lu);*/
+	/*printf("Cd test \n");
+	my_cd_global(argv[1]);
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);*/
+	/*my_cd_global("Images/");
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);*/
+	/*my_cd_global("test.tar/Drafts/\0");
+	printf("pwd : %s \n",pwd_global);
+	printf("tar actuel : %s \n",tar_actuel);
+	printf("in tar = %d\n",in_tar);*/
 */
 	return 0;
 }
