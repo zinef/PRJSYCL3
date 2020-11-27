@@ -75,7 +75,7 @@ int main(int argc,char **argv){
 	char *listeArgsPipe[4]={NULL,NULL,NULL,NULL};
 	char *listeArgs[4]={NULL,NULL,NULL,NULL};
 	char entree[100];
-	strcpy(entree,"ls -l|grep aaa");
+	strcpy(entree,"mkdir rep1 rep2");
 	int cas =decortiquerEntree(entree,listeArgs,listeArgsPipe);
 	printf("le cas est le %d \n",cas);
 	if (cas != 0){
@@ -107,24 +107,25 @@ int main(int argc,char **argv){
 	char pwd[1024]; 
     	getcwd(pwd, sizeof(pwd)); 
 	printf("pwd = %s\n",pwd);
-	/*int ret = verifier_exist_rep(argv[1],entete_lu);
+	int ret = verifier_exist_rep(argv[1],entete_lu);
 	printf("val ret = %d\n",ret);
     	getcwd(pwd, sizeof(pwd)); 
 	printf("pwd = %s\n",pwd);
-	printf("entete lu =%d\n",*entete_lu);*/
-	/*printf("Cd test \n");
+	printf("entete lu =%d\n",*entete_lu);
+	printf("Cd test \n");
 	my_cd_global(argv[1]);
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
-	printf("in tar = %d\n",in_tar);*/
-	/*my_cd_global("Images/");
+	printf("in tar = %d\n",in_tar);
+	my_cd_global("Images/");
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
-	printf("in tar = %d\n",in_tar);*/
-	/*my_cd_global("test.tar/Drafts/\0");
+	printf("in tar = %d\n",in_tar);
+	my_cd_global("test.tar/Drafts/\0");
 	printf("pwd : %s \n",pwd_global);
 	printf("tar actuel : %s \n",tar_actuel);
-	printf("in tar = %d\n",in_tar);*/
+	printf("in tar = %d\n",in_tar);
 */
+	
 	return 0;
 }

@@ -85,11 +85,11 @@ void executerCmdSimple(char *cmd[]){
 	my_pwd : la procédure qui affiche le répértoire courant
 	
 ***/
-void my_pwd(){
-	char pwd[1024]; 
-    getcwd(pwd, sizeof(pwd)); 
-    printf("\nRépertoire : %s \n", pwd); 
-
+char* my_pwd(){
+	char *pwd; 
+    getcwd(pwd, sizeof(pwd));
+    //printf("\nRépertoire : %s \n", pwd); 
+	return (pwd); 
 }
 
 
@@ -97,11 +97,12 @@ void my_pwd(){
 	my_pwd_global : la procédure qui affiche le répértoire courant , dans le cas des fichier tar
 
 ***/
-void my_pwd_global(){
+char* my_pwd_global(){
 	if (in_tar){
-		printf("Répertoire : %s \n",pwd_global);
+		//printf("Répertoire : %s \n",pwd_global);
+		return pwd_global;
 	}else{
-		my_pwd();
+		return my_pwd();
 	}
 }
 /***
@@ -218,10 +219,28 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 }
 /***
 	process_pwd_global : fonction qui corrige pwd_global en un chemin absolu après modification
-	entrées : pwd_global
-	sorties : 
+	entrées : void
+	sorties : void
 
 ***/
+/*void process_pwd_global(){
+	char const s[2]="/";
+	char *tok;
+	char tmp[1024]="";
+	char pwd[1024]="/";
+	int cpt=0;
+	strcpy(tmp,pwd_global);
+	tok=strtok(tmp,s);
+	while(tok!=NULL){
+		if ((strcmp(tok,"..") != 0)&&(cpt==0)){
+			strcat(pwd,tok);
+			strcat(pwd,"/");
+		}else{
+			cpt++;
+		}
+		tok=strtok(NULL,s);
+	}
+}*/
 /***
 	strrev : fonction qui renverse l'ordre d'une chaine de caractère
 ***/
@@ -352,6 +371,125 @@ void my_cd_global(char *path){
 	
 }
 /***
+	verif_exist_rep_in_tar: liste des fichiers et répértoire dans un fichier tar
+	
+
+***/
+int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int *entete_a_modifier,int *trouve){
+	
+	int fd=open(nomfic,O_RDONLY);
+	if (fd<0){
+		perror("erruer dans l'ouverture");
+		exit(errno);
+	}
+	char buf[513];
+	int EnteteAlire=0;
+	int stop=0;
+	int size=0;
+	int n=0;
+	int ret=0;
+	
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+		//printf("entete à lire = %d\n",EnteteAlire);
+		st= (struct posix_header * ) buf;
+		//printf("nom fichier = %s\n",st->name);
+		
+		if((st->name)[0] == '\0'){
+			stop=1;
+		}
+		if(((st->name)[0] == '#')&&(*trouve==0)&&(st->typeflag == '5')){
+			*trouve=1;
+			*entete_a_modifier=EnteteAlire;
+		}
+		if (strcmp(st->name,path)==0){
+			stop=1;
+			*entete_lu=EnteteAlire;
+		}
+		sscanf(st->size,"%o",&size);
+		//printf("taille du fichier = %d\n",size);
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1;
+		}
+
+		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+	}
+	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
+		//printf("success\n");
+		ret=1;
+	}
+
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+	close(fd);
+
+	return ret;
+
+}
+/***
+  	my_mkdir : la fonction avec laquelle on crée des répértoires 
+  	entrées:nom des répértoire à crée
+	sorties: booléen
+***/
+
+int my_mkdir(char *nom_rep){
+
+	//récupération de pwd
+	char *pwd=my_pwd_global();
+	int i=strlen(strstr(pwd,".tar/"));
+	strcat(nom_rep,"/");
+	if(i>0){//le chemin ou doit on créer le repértoire inclus un tar 
+		char tar_file[100]="";
+		strncpy(tar_file,pwd,strlen(pwd)-i+4);
+
+		//tester si le répértoire existe déjà dans le tar actuel
+		int *entete_a_modifier;
+		int *entete_lu;
+		int *trouve=0;
+		int ret=verif_exist_rep_in_tar_for_mkdir(tar_file,nom_rep,entete_lu,entete_a_modifier,trouve); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
+		if(ret>0){
+			perror("Le répértoire existe déjà");
+			exit(0);
+		}
+		char buf[513]="";
+		//on ajoute le répértoire si ce n'est pas un doublon
+		//on doit écrire à l'entete entete_a_modifier si trouve est vrai i.e. trouve=1
+		//sinon on ajoute à la fin du fichier 
+		int fd=open(tar_file,O_WRONLY);
+		struct posix_header *st =malloc(sizeof(struct posix_header));
+		if(*trouve){//on modifie le bloc entete_a_modifier en remplacant ses caractéristiques par le nouveau rép qu'on veut créer 
+			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
+			int n=read(fd,buf,BLOCKSIZE);
+			if (n<0){
+				perror("erreur dans la lecture");
+				exit(0);
+			}
+			
+			st=(struct posix_header * ) buf;
+			strcpy(st->name,"");
+			strcpy(st->name,nom_rep);
+			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
+			write(fd,st,sizeof(st));
+		}else{
+			//ajout à la fin du fichier tar 
+			lseek(fd,0,SEEK_END);
+			st=(struct posix_header * ) buf;
+			strcpy(st->name,nom_rep);
+			sprintf(st->size,"%o",0);
+			write(fd,st,sizeof(st));
+		}
+		
+	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
+	
+	}	
+}
+
+/***
 	trouverPipes : la fonction qui trouve les pipes et retournes les commandes séparées 
 	@ entrées : entrée de ligne de commande et un tableau dans lequel on va récupérer les commandes séparées
 	@ sorties : booléen 
@@ -399,13 +537,6 @@ void recupArgs(char *entree,char **listeArgs){
 	}
 	
 }
-/***
-
-
-
-
-
-***/
 
 
 /***
@@ -484,4 +615,153 @@ const char *recup_ext(const char *filename) {
     return dot + 1;
 }
 
+/****
+partie rm
+
+*****/
+//Une fonction qui ouvre un tarball 
+int  open_tar_file(char ch[100])
+{
+	int j=0;
+	char s[100];
+	char str2[100];
+	strcpy(s,ch);
+	int i= strlen(strstr(s,".tar/"));
+	strncpy(str2,ch,strlen(ch)-i+4);
+	str2[strlen(ch)-i+4]='\0';
+	j=open(str2,O_RDWR);
+	return j;
+}
+
+
+// Une fonction qui renvoie la taille du fichier 
+int get_file_size(struct posix_header *header)
+{
+	int size;
+	sscanf(header-> size, "%o", &size);
+	return (size + 512-1)/512;;
+}
+
+
+
+
+// Pour sauter de nb_block blocs dans le fichier de descripteur fd  
+void seek_n_block(int fd ,int nb_block)
+{
+	lseek(fd ,nb_block*512,SEEK_CUR);
+}
+
+// Passer à la prochaine entete 
+void seek_next_entete (int fd ,struct posix_header *header)
+{
+	seek_n_block(fd,get_file_size(header));
+}
+
+
+
+void rm_in_tar(int fd,char file_name[100])
+{
+	char buf[513];
+	int EnteteAlire=0;
+	int stop=0;
+	int size=0;
+	int n=0;
+	int ret=0;
+	int entete_a_lire;
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+		
+                st= (struct posix_header *) buf;
+		// on teste si on est pas arrivé à la fin 
+                if((st->name)[0] == '\0'){
+			stop=1;
+		}
+		if (strcmp(st->name,file_name)==0){
+			stop=1;
+			entete_a_lire=EnteteAlire;
+		}
+		// on récupère la taille di fichier 
+                sscanf(st->size,"%o",&size);
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);// >>BLOCKBITS = /512
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1; 
+		}
+
+		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+	}
+     // on teste les conditions de sortie 
+	if((stop==1)&&((st->name)[0] != '\0')){ // on est au bon fichier 
+		lseek(fd,0,SEEK_SET); // on se repositionne au debut
+		lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET); //on va directement a lentete concernée 
+		write(fd,"#",1);// # i.e le fichier est supprimé logiquement 
+		//Une suppresion logique 
+		//une boucle pour supprimer logiquement (i.e mettre le début des blocs concernés par le fichier à \0 )
+		int block= size >> BLOCKBITS; //recuperer le nombre de block de fichier 
+		while((block>0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+			write(fd,"#",1);
+			block--;  /* supprimer les blocks logiquement */
+		}
+	}
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+}
+
+
+
+int rm(char chaine[100])
+{
+int delete,reussi,fd,i;
+int erreur=0;
+char str[100], nom[100];
+strcpy(str,chaine);
+if (in_tar==0){
+   if (strstr(str, ".tar/")== NULL){ // Fonctionnement normal de rm
+    
+           delete= remove(chaine);
+           if (delete !=0){
+               erreur=errno;
+               if (erreur==ENOENT )
+               printf("Le fichier n'existe pas\n");
+           }
+           else 
+             printf("le Fichier a été bien supprimé\n");
+
+    } // Fin du fonctionnement normal de rm
+   else {
+           fd= open_tar_file(str);
+           if (fd<0) // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+           {
+              
+              printf("le chemin que vous avez introduit n'est pas valide\n");
+              return 0; // on sort 
+           }
+           // si le chemin vers le tarball existe et que ce dernier est bien ouvert
+           // on recupere le chemin jusqu'au tar et on recupere la suite du chemain dans une autre chaine
+           i = strlen(strstr(chaine,".tar/")); 
+           strncpy(str,&chaine[strlen(chaine)- i + 5 ] , i );
+           rm_in_tar(fd,str); 
+           close(fd);
+   }
+}else{ // on est dans un tarball 
+   		fd= open_tar_file(str);
+           if (fd<0) // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+           {
+              
+              printf("le chemin que vous avez introduit n'est pas valide\n");
+              return 0; // on sort 
+           }
+           // si le chemin vers le tarball existe et que ce dernier est bien ouvert
+           // on recupere le chemin jusqu'au tar et on recupere la suite du chemain dans une autre chaine
+           i = strlen(strstr(chaine,".tar/")); 
+           strncpy(str,&chaine[strlen(chaine)- i + 5 ] , i );
+           rm_in_tar(fd,str); 
+           close(fd);
+  	 
+  	
+	}
+}
 
