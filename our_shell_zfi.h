@@ -62,7 +62,11 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu);
 char *strrev(char *str);
 void deplacement_in_tar(char *path,int entete_a_lire);
 //void process_pwd_global();
+int my_mkdir(char *nom_rep);
 int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int *entete_a_modifier,int *trouve);
+int my_rmdir(char *nom_rep);
+int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int *cpt);
+int startsWith(const char *pre, const char *str);
 //rm 
 int  open_tar_file(char ch[100]);
 int get_file_size(struct posix_header *header);

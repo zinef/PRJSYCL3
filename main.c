@@ -127,12 +127,16 @@ int main(int argc,char **argv){
 	printf("in tar = %d\n",in_tar);
 */
 
-//	rm("tar.tar/rep");
+//	rm("toto.tar/fic1");
+/*
+	in_tar=1;
+	strcpy(pwd_global,"/home/zizou/Bureau/SYCL3/prjsycl3/toto.tar/");
+	int ret = my_mkdir("rep2");
+*/
 
-	in_tar=0;
-	//strcpy(pwd_global,"/home/zizou/Bureau/SYCL3/prjsycl3");
-	int ret = my_mkdir("zizou");
-
-
+/*	in_tar=1;
+	strcpy(pwd_global,"/home/zizou/Bureau/SYCL3/prjsycl3/toto.tar/");
+	int ret= my_rmdir("rep2");
+*/
 	return 0;
 }

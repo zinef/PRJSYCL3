@@ -168,7 +168,7 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 	int n=0;
 	int ret=0;
 	
-	struct posix_header *st =malloc(sizeof(struct posix_header));
+	struct posix_header *st =malloc(sizeof(struct posix_header*));
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
 		//printf("entete à lire = %d\n",EnteteAlire);
 		st= (struct posix_header * ) buf;
@@ -379,7 +379,7 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 	int n=0;
 	int ret=0;
 	
-	struct posix_header *st =malloc(sizeof(struct posix_header));
+	struct posix_header *st =malloc(sizeof(struct posix_header*));
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
 		//printf("entete à lire = %d\n",EnteteAlire);
 		st= (struct posix_header * ) buf;
@@ -388,7 +388,7 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		if((st->name)[0] == '\0'){
 			stop=1;
 		}
-		if(((st->name)[0] == '#')&&(*trouve==0)){//&&(st->typeflag == '5')
+		if(((st->name)[0] == '#')&&(*trouve==0)&&(st->typeflag == '5')){
 			*trouve=1;
 			*entete_a_modifier=EnteteAlire;
 		}
@@ -408,7 +408,7 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
 	}
-	if((stop==1)&&((st->name)[0] != '\0')){//&&(st->typeflag == '5')
+	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
 		//printf("success\n");
 		ret=1;
 	}
@@ -442,7 +442,16 @@ int my_mkdir(char *nom_rep){
 	strcpy(tmp,nom_rep);
 	
 	if(i>0){//le chemin ou doit on créer le repértoire inclus un tar 
-		strcat(tmp,"/");
+		char suite[100]="";
+		strncpy(suite,&pwd[strlen(pwd)-i+5],i);
+		if(strcmp(suite,"") == 0){
+			strcat(tmp,"/");
+		}else{
+			strcat(suite,tmp);
+			strcat(suite,"/");
+			strcpy(tmp,"");
+			strcpy(tmp,suite);
+		}
 		char tar_file[100]="";
 		strncpy(tar_file,pwd,strlen(pwd)-i+4);
 
@@ -462,9 +471,9 @@ int my_mkdir(char *nom_rep){
 		
 		//on ajoute le répértoire si ce n'est pas un doublon
 		//on doit écrire à l'entete entete_a_modifier si trouve est vrai i.e. trouve=1
-		//sinon on ajoute à la fin du fichier 
+		//sinon on ajoute à la fin du fichier à l'entete entete_lu qui pointe vers la fin du fichier si le répértoire n'existe pas 
 		int fd=open(tar_file,O_RDWR);
-		struct posix_header *st =malloc(sizeof(struct posix_header));
+		struct posix_header *st =malloc(sizeof(struct posix_header*));
 		if(*trouve){//on modifie le bloc entete_a_modifier en remplacant ses caractéristiques par le nouveau rép qu'on veut créer 
 			
 			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
@@ -483,14 +492,14 @@ int my_mkdir(char *nom_rep){
 			//time(&t);
 			//sprintf(st->mtime, "%ld",t);
 			sprintf(st->uid,"%d",getuid());
-			sprintf(st->gid,"%d",getgid());
+			sprintf(st->gid,"%d",getuid());
 			strcpy(st->uname,uid);
 			strcpy(st->gname,uid);
 			strcpy(st->magic,TMAGIC);
 			strcpy(st->version,TVERSION);
 			set_checksum(st);
 			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
-			write(fd,st,sizeof(st));
+			write(fd,st,sizeof(struct posix_header));
 			
 		}else{
 			//ajout à la fin du fichier tar 
@@ -503,7 +512,7 @@ int my_mkdir(char *nom_rep){
 			//time(&t);
 			//sprintf(st->mtime, "%ld",t);
 			sprintf(st->uid,"%d",getuid());
-			sprintf(st->gid,"%d",getgid());
+			sprintf(st->gid,"%d",getuid());
 			strcpy(st->uname,uid);
 			strcpy(st->gname,uid);
 			strcpy(st->magic,TMAGIC);
@@ -527,6 +536,143 @@ int my_mkdir(char *nom_rep){
 		}
 	}	
 }
+/***
+	verif_exist_rep_in_tar: liste des fichiers et répértoire dans un fichier tar
+	
+
+***/
+int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int *cpt){
+	
+	int fd=open(nomfic,O_RDONLY);
+	if (fd<0){
+		perror("erruer dans l'ouverture");
+		exit(errno);
+	}
+	char buf[513];
+	int EnteteAlire=0;
+	int stop=0;
+	int size=0;
+	int n=0;
+	int ret=0;
+	
+	struct posix_header *st =malloc(sizeof(struct posix_header*));
+
+	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+		//printf("entete à lire = %d\n",EnteteAlire);
+		st= (struct posix_header * ) buf;
+		//printf("nom fichier = %s\n",st->name);
+		
+		if((st->name)[0] == '\0'){
+			stop=1;
+			
+		}
+		if((startsWith(path,st->name))&&(st->typeflag == '5')){
+			*cpt=*cpt+1;
+		}
+		if ((strcmp(st->name,path)==0)&&(st->typeflag == '5')){
+			*entete_lu=EnteteAlire;
+			ret=1;
+		}
+		sscanf(st->size,"%o",&size);
+		//printf("taille du fichier = %d\n",size);
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1;
+		}
+
+		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+	}
+	if (n<0){
+		perror("erreur dans la lecture");
+		exit(errno);
+	}
+	close(fd);
+
+	return ret;
+
+}
+/***
+  	my_rmdir : la fonction avec laquelle on suprime des répértoires (vides)  
+
+  	entrées:nom des répértoire à supprimer
+
+	sorties: booléen
+
+***/
+
+int my_rmdir(char *nom_rep){
+
+	//récupération de pwd
+	char *pwd=my_pwd_global();
+	
+	int i;
+	if(strstr(pwd,".tar/") != NULL){
+		i=strlen(strstr(pwd,".tar/"));
+	}else{
+		i=0;
+	}
+	char tmp[100];
+	strcpy(tmp,nom_rep);
+	
+	if(i>0){//le chemin ou doit on supprimer un repértoire inclus un tar 
+		char suite[100]="";
+		strncpy(suite,&pwd[strlen(pwd)-i+5],i);
+		if(strcmp(suite,"") == 0){
+			strcat(tmp,"/");
+		}else{
+			strcat(suite,tmp);
+			strcat(suite,"/");
+			strcpy(tmp,"");
+			strcpy(tmp,suite);
+		}
+		char tar_file[100]="";
+		strncpy(tar_file,pwd,strlen(pwd)-i+4);
+
+		//tester si le répértoire existe déjà dans le tar actuel
+		int *entete_lu=malloc(sizeof(int*));
+		int *cpt=malloc(sizeof(int*));
+		*cpt=0;
+		int ret=verif_exist_rep_in_tar_for_rmdir(tar_file,tmp,entete_lu,cpt); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
+		if(ret==0){
+			perror("Le répértoire n'existe pas\n");
+			exit(EXIT_FAILURE);
+		}
+		if(*cpt>1){
+			perror("Le répértoire n'est pas vide\n");
+			exit(EXIT_FAILURE);
+		}
+		//le répértoire existe on verifie si le répértoire est vide , si c'est le cas on le supprime
+		
+		int fd=open(tar_file,O_RDWR);
+		struct posix_header *st =malloc(sizeof(struct posix_header*));
+		lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
+		char buf[513]="";
+		int n=read(fd,buf,BLOCKSIZE);
+		if (n<0){
+			perror("erreur dans la lecture\n");
+			exit(EXIT_FAILURE);
+		}
+			
+		st=(struct posix_header * ) buf;
+		st->name[0]='#'; //supprimer logiquement le repértoire
+		set_checksum(st);
+		lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
+		write(fd,st,sizeof(struct posix_header));
+		
+		close(fd);
+	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
+		//utilisation de la fonction mkdir 
+		struct stat *st =malloc(sizeof(struct stat*));
+		if(stat(tmp,st) == 0){
+			rmdir(tmp);
+		}else{
+			perror("le répértoire n'existe pas");
+		}
+	}	
+}
+
 
 /***
 	trouverPipes : la fonction qui trouve les pipes et retournes les commandes séparées 
@@ -653,7 +799,18 @@ const char *recup_ext(const char *filename) {
     if(!dot || dot == filename) return "";
     return dot + 1;
 }
+/***
+	startsWith : une fonction pour tester si une chaine de caractère commence par une sous chaine
+	entrées: les deux chaines 
+	sorties: booleen , 1 si vrai 0 sinon
 
+***/
+int startsWith(const char *pre, const char *str)
+{
+    size_t lenpre = strlen(pre),
+           lenstr = strlen(str);
+    return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
+}
 /****
 partie rm
 
@@ -733,8 +890,22 @@ void rm_in_tar(int fd,char file_name[100])
      // on teste les conditions de sortie 
 	if((stop==1)&&((st->name)[0] != '\0')){ // on est au bon fichier 
 		lseek(fd,0,SEEK_SET); // on se repositionne au debut
+		
+		struct posix_header *st =malloc(sizeof(struct posix_header*));
 		lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET); //on va directement a lentete concernée 
-		write(fd,"#",1);// # i.e le fichier est supprimé logiquement 
+		char buf[513]="";
+		int n=read(fd,buf,BLOCKSIZE);
+		if (n<0){
+			perror("erreur dans la lecture\n");
+			exit(EXIT_FAILURE);
+		}
+			
+		st=(struct posix_header * ) buf;
+		st->name[0]='#'; //supprimer logiquement le repértoire
+		set_checksum(st);
+		lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET);
+		write(fd,st,sizeof(struct posix_header));
+		
 		//Une suppresion logique 
 		//une boucle pour supprimer logiquement (i.e mettre le début des blocs concernés par le fichier à \0 )
 		int block= size >> BLOCKBITS; //recuperer le nombre de block de fichier 
