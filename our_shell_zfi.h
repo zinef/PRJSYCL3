@@ -50,7 +50,6 @@ int trouverPipe(char *entree,char **commandesSiPipe);
 void Initialiser_shell();
 int recupEntry(char *ch);
 void executerCmdSimple(char *cmd[]);
-char* my_pwd();
 void recupArgs(char *entree,char **listeArgs);
 int commandeValide(char **listeArgs);
 int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);

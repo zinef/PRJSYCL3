@@ -81,17 +81,6 @@ void executerCmdSimple(char *cmd[]){
 
 ***/
 
-/***
-	my_pwd : la procédure qui affiche le répértoire courant
-	
-***/
-char* my_pwd(){
-	char *pwd; 
-    getcwd(pwd, sizeof(pwd));
-    //printf("\nRépertoire : %s \n", pwd); 
-	return (pwd); 
-}
-
 
 /***
 	my_pwd_global : la procédure qui affiche le répértoire courant , dans le cas des fichier tar
@@ -102,7 +91,8 @@ char* my_pwd_global(){
 		//printf("Répertoire : %s \n",pwd_global);
 		return pwd_global;
 	}else{
-		return my_pwd();
+   		getcwd(pwd_global, sizeof(pwd_global)); 
+		return pwd_global;
 	}
 }
 /***
@@ -398,7 +388,7 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		if((st->name)[0] == '\0'){
 			stop=1;
 		}
-		if(((st->name)[0] == '#')&&(*trouve==0)&&(st->typeflag == '5')){
+		if(((st->name)[0] == '#')&&(*trouve==0)){//&&(st->typeflag == '5')
 			*trouve=1;
 			*entete_a_modifier=EnteteAlire;
 		}
@@ -408,16 +398,17 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		}
 		sscanf(st->size,"%o",&size);
 		//printf("taille du fichier = %d\n",size);
+		*entete_lu=EnteteAlire;
 		if(size==0){
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
 		}
 		else{
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1;
 		}
-
+		
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
 	}
-	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
+	if((stop==1)&&((st->name)[0] != '\0')){//&&(st->typeflag == '5')
 		//printf("success\n");
 		ret=1;
 	}
@@ -427,7 +418,6 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		exit(errno);
 	}
 	close(fd);
-
 	return ret;
 
 }
@@ -441,51 +431,100 @@ int my_mkdir(char *nom_rep){
 
 	//récupération de pwd
 	char *pwd=my_pwd_global();
-	int i=strlen(strstr(pwd,".tar/"));
-	strcat(nom_rep,"/");
+	
+	int i;
+	if(strstr(pwd,".tar/") != NULL){
+		i=strlen(strstr(pwd,".tar/"));
+	}else{
+		i=0;
+	}
+	char tmp[100];
+	strcpy(tmp,nom_rep);
+	
 	if(i>0){//le chemin ou doit on créer le repértoire inclus un tar 
+		strcat(tmp,"/");
 		char tar_file[100]="";
 		strncpy(tar_file,pwd,strlen(pwd)-i+4);
 
 		//tester si le répértoire existe déjà dans le tar actuel
-		int *entete_a_modifier;
-		int *entete_lu;
-		int *trouve=0;
-		int ret=verif_exist_rep_in_tar_for_mkdir(tar_file,nom_rep,entete_lu,entete_a_modifier,trouve); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
+		int *entete_a_modifier=malloc(sizeof(int*));
+		int *entete_lu=malloc(sizeof(int*));
+		int *trouve=malloc(sizeof(int*));
+		*trouve=0;
+		int ret=verif_exist_rep_in_tar_for_mkdir(tar_file,tmp,entete_lu,entete_a_modifier,trouve); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
 		if(ret>0){
 			perror("Le répértoire existe déjà");
-			exit(0);
+			exit(EXIT_FAILURE);
 		}
 		char buf[513]="";
+		time_t t;
+		char* uid=getenv("USER");
+		
 		//on ajoute le répértoire si ce n'est pas un doublon
 		//on doit écrire à l'entete entete_a_modifier si trouve est vrai i.e. trouve=1
 		//sinon on ajoute à la fin du fichier 
-		int fd=open(tar_file,O_WRONLY);
+		int fd=open(tar_file,O_RDWR);
 		struct posix_header *st =malloc(sizeof(struct posix_header));
 		if(*trouve){//on modifie le bloc entete_a_modifier en remplacant ses caractéristiques par le nouveau rép qu'on veut créer 
+			
 			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
 			int n=read(fd,buf,BLOCKSIZE);
 			if (n<0){
 				perror("erreur dans la lecture");
-				exit(0);
+				exit(EXIT_FAILURE);
 			}
 			
 			st=(struct posix_header * ) buf;
 			strcpy(st->name,"");
-			strcpy(st->name,nom_rep);
+			strcpy(st->name,tmp);
+			sprintf(st->size,"%o",0);
+			st->typeflag='5';
+			sprintf(st->mode,"0000700");
+			//time(&t);
+			//sprintf(st->mtime, "%ld",t);
+			sprintf(st->uid,"%d",getuid());
+			sprintf(st->gid,"%d",getgid());
+			strcpy(st->uname,uid);
+			strcpy(st->gname,uid);
+			strcpy(st->magic,TMAGIC);
+			strcpy(st->version,TVERSION);
+			set_checksum(st);
 			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
 			write(fd,st,sizeof(st));
+			
 		}else{
 			//ajout à la fin du fichier tar 
-			lseek(fd,0,SEEK_END);
+			lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
 			st=(struct posix_header * ) buf;
-			strcpy(st->name,nom_rep);
+			strcpy(st->name,tmp);
 			sprintf(st->size,"%o",0);
-			write(fd,st,sizeof(st));
+			st->typeflag='5';
+			sprintf(st->mode,"0000700");
+			//time(&t);
+			//sprintf(st->mtime, "%ld",t);
+			sprintf(st->uid,"%d",getuid());
+			sprintf(st->gid,"%d",getgid());
+			strcpy(st->uname,uid);
+			strcpy(st->gname,uid);
+			strcpy(st->magic,TMAGIC);
+			strcpy(st->version,TVERSION);
+			set_checksum(st);
+			int w=write(fd,st,sizeof(struct posix_header));
+			if(w<0){
+				perror("err dans l'écriture");
+				exit(EXIT_FAILURE);
+			}
+			
 		}
-		
+		close(fd);
 	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
-	
+		//utilisation de la fonction mkdir 
+		struct stat *st =malloc(sizeof(struct stat*));
+		if(stat(tmp,st) == -1){
+			mkdir(tmp,0700);
+		}else{
+			perror("le répértoire existe déjà");
+		}
 	}	
 }
 

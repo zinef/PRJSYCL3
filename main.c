@@ -126,6 +126,13 @@ int main(int argc,char **argv){
 	printf("tar actuel : %s \n",tar_actuel);
 	printf("in tar = %d\n",in_tar);
 */
-	
+
+//	rm("tar.tar/rep");
+
+	in_tar=0;
+	//strcpy(pwd_global,"/home/zizou/Bureau/SYCL3/prjsycl3");
+	int ret = my_mkdir("zizou");
+
+
 	return 0;
 }
