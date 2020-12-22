@@ -7,35 +7,31 @@
 #include <stdlib.h> 
 #include <sys/types.h> 
 #include <sys/wait.h> 
-/*L'utilisation des deux bibliothèques ci-dessous n'est en aucun cas une utilisation définitive , c'est juste une utilisation 
-pour le débougage des premières fonctionnalités qui regroupent essentiellement des fonctionnalités pour manipuler n'importe quel shell
-et en cas particulier un shell pour les archives Tar (notre premier rendu consiste en les fonctions qui vont manipuler par la suite les 
-commandes spécialisées dans les fichiers *.tar), c'est pour répondre à la spécification de sauvgarde de l'historique de commande fournies par
-ces deux bibliothèques */
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <assert.h>
 #include "tar.h"
 
 #define ever ;;
 #define MAXCMDs 10
 #define MAXENTREE 1024 
-#define NBCMD 4
+#define NBCMD 6
 #define NBPARAMS 10
 #define NBOPTIONS 10
 #define BLOCKSIZE 512
 #define BLOCKBITS 9
 
 /*working directory*/
-char pwd_global[1024]="./";//initialisation : répertoire ou le shell se lance
+char pwd_global[1024]="";//initialisation : répertoire ou le shell se lance
 int in_tar=0; 
-char tar_actuel[1024]="test.tar";
+char tar_actuel[1024]="";
 char strTmp[255]; 
 /*la liste des commandes valables dans le Shell */
-char *listeDesCommande[NBCMD]={"cd","ls","pwd","mkdir"};
+char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit"};
 /*la structure d'une commande */
 struct Commande{
 	char nomCommande[30];
@@ -60,13 +56,16 @@ const char *recup_ext(const char *filename);
 int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]);
 int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu);
 char *strrev(char *str);
-void deplacement_in_tar(char *path,int entete_a_lire);
+int deplacement_in_tar(char *path,int entete_a_lire);
 //void process_pwd_global();
 int my_mkdir(char *nom_rep);
 int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int *entete_a_modifier,int *trouve);
 int my_rmdir(char *nom_rep);
 int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int *cpt);
 int startsWith(const char *pre, const char *str);
+int countOccurrences(char * str, char * toSearch);
+void chop(char *str, size_t n);
+void my_exit();
 //rm 
 int  open_tar_file(char ch[100]);
 int get_file_size(struct posix_header *header);

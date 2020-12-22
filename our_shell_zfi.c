@@ -56,21 +56,33 @@ int recupEntry(char *ch){
 
 void executerCmdSimple(char *cmd[]){
 	
-	//création d'un processus fils
-	pid_t pid = fork();
-
-	if (pid <0){
-		perror("erreur dans la création du processus fils \n");
-		exit(errno);
-	}else {
-		if(pid == 0){
-			//éxecution de la commande voulu par la famille des exec (execlp , execvp , execl , execv ...)
-			//TODO: à compléter plus tard , les commandes à executer ici sont celles spécialisées dans la manipulation des tarballs
-			exit(0);
+	if(strcmp(cmd[0],"cd") == 0){
+		if(strcmp(cmd[1],"") != 0)
+			my_cd_global(cmd[1]);
+	}else{
+		if(strcmp(cmd[0],"exit") == 0){
+			my_exit();
 		}else{
-			
-			//attendre que le fils termine son execution
-			wait(NULL);
+			if(strcmp(cmd[0],"mkdir") == 0){
+				//TODO:loop for all directories to create
+				my_mkdir(cmd[1]);
+			}else{
+				if(strcmp(cmd[0],"rmdir") == 0){
+					//TODO:loop for all directories to remove
+					my_rmdir(cmd[1]);
+				}else{
+					if(strcmp(cmd[0],"pwd") == 0){
+						write(1,pwd_global,sizeof(pwd_global));
+						write(1,"\n",sizeof("\n"));
+					}else{
+						if(strcmp(cmd[0],"rm") == 0){
+							rm(cmd[1]);
+						}else{
+							write(1,"zfi : La commande n'existe pas\n",sizeof("zfi : La commande n'existe pas\n"));
+						}
+					}
+				}
+			}
 		}
 	}
 }
@@ -83,7 +95,7 @@ void executerCmdSimple(char *cmd[]){
 
 
 /***
-	my_pwd_global : la procédure qui affiche le répértoire courant , dans le cas des fichier tar
+	my_pwd_global : la procédure qui affiche le répértoire courant 
 
 ***/
 char* my_pwd_global(){
@@ -101,45 +113,62 @@ char* my_pwd_global(){
 	sorties:void
 ***/
 void my_cd(char *path){
-		char pwd[1024];
-	    getcwd(pwd,sizeof(pwd));
-		strcat(pwd,"/");
-		char *chemin=strcat(pwd,path);
-		int flag=chdir(chemin);
-		if(flag ==0) {
+	int flag;
+	char *chemin;
+		if(path[0] == '/'){
+			flag=chdir(path);
+			if(flag == 0) {
 			
-			chdir(pwd);
-			strcpy(pwd_global,"");
-			strcpy(pwd_global,chemin);
-			strcpy(tar_actuel,"");
-			in_tar=0;
-		}
+				//chdir(pwd);
+				strcpy(pwd_global,"");
+				strcpy(pwd_global,path);
+				strcpy(tar_actuel,"");
+				in_tar=0;
+			}else{
+				write(1,"cd : Le répértoire n'existe pas\n",sizeof("cd : Le répértoire n'existe pas\n"));
+			}
+		}else{
+			char pwd[1024];
+			getcwd(pwd,sizeof(pwd));
+			strcat(pwd,"/");
+			chemin=strcat(pwd,path);
+			flag=chdir(chemin);
+			if(flag == 0) {
+			
+				//chdir(pwd);
+				strcpy(pwd_global,"");
+				strcpy(pwd_global,chemin);
+				strcpy(tar_actuel,"");
+				in_tar=0;
+			}else{
+				write(1,"cd : Le répértoire n'existe pas\n",sizeof("cd : Le répértoire n'existe pas\n"));
+			}
+	}
 }
 /***
 	déplacement_in_tar : fonction pour se déplacer dans le tar (personalisée pour cd)
 
 ***/
-void deplacement_in_tar(char *path,int entete_a_lire){
+int deplacement_in_tar(char *path,int entete_a_lire){
 
 	//à modifier
 	int fd=open(tar_actuel,O_RDONLY);
 	if (fd<0){
-		perror("erruer dans l'ouverture");
-		exit(errno);
+		write(1,"No sush file or directory\n",sizeof("No sush file or directory\n"));
+		return -1 ;
 	}
 	//seek
 	lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET);
 	//lecture et bufferisation du répértoire 
 	int size;
-	struct posix_header *st =malloc(sizeof(struct posix_header));
+	struct posix_header *st =malloc(sizeof(struct posix_header*));
 	char buf[513];
 	int n=read(fd,buf,BLOCKSIZE);
 	if (n<0){
-		perror("erreur dans la lecture");
-		exit(errno);
+		write(1,"Erreur dans la lecture\n",sizeof("Erreur dans la lecture\n"));
+		return -1 ;
 	}
 	st= (struct posix_header * ) buf;
-	printf("nom rép :%s\n",st->name);
 	sscanf(st->size,"%o",&size);
 	char *buf_rep=malloc(size);
 	n=read(fd,buf_rep,size);
@@ -158,8 +187,11 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 	
 	int fd=open(nomfic,O_RDONLY);
 	if (fd<0){
-		perror("erruer dans l'ouverture");
-		exit(errno);
+		write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
+		return -1;
+	}
+	if (strcmp(path,"") == 0 ){//déplacement dans la racine d'un tar
+		return 1;
 	}
 	char buf[513];
 	int EnteteAlire=0;
@@ -176,7 +208,6 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 		
 		if((st->name)[0] == '\0'){
 			stop=1;
-			printf("c'est Carré !!\n");
 		}
 		if (strcmp(st->name,path)==0){
 			stop=1;
@@ -254,38 +285,80 @@ char *strrev(char *str) {
 
 ***/
 int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
-	int ret=0;
+	int ret=0,i=0;
 	if(in_tar){
-		//tester si path existe dans les répértoires du tar actuel 
-		
-		ret=verif_exist_rep_in_tar(tar_actuel,path,entete_lu);
-		if(ret) {
-			ret++;
-			int i=strlen(strstr(pwd_global,".tar/"));
-			int k=0;
-			int j;
-			for(j=strlen(pwd_global) - i + 5 ;j<strlen(pwd_global) - i + 5+ strlen(path);j++){
-				pwd_global[j]=path[k];
-				k++;
+		if(startsWith("../",path)){
+			int n=countOccurrences(path,"../");
+			int i=0;
+			char tmp[1024]="";
+			strcpy(tmp,pwd_global);
+			while(n>0){
+				chop(path,3);
+				i=2;
+				while(tmp[strlen(tmp)-i] != '/'){
+					i++;
+				}
+				tmp[strlen(tmp)-i+1]='\0';
+				n--;
 			}
-			pwd_global[j+1]='\0';
+			if(strstr(tmp,".tar/") == NULL){
+					in_tar=0;
+					strcpy(tar_actuel,"");
+			}
+			strcpy(pwd_global,"");
+			strcpy(pwd_global,tmp);
+			ret=4;
+		}else{
+			//tester si path existe dans les répértoires du tar actuel 
+			if(strstr(pwd_global,".tar/") != NULL){
+				i=strlen(strstr(pwd_global,".tar/"));
+			}
+			char tmp[1024]="";
+			strncpy(tmp,&pwd_global[strlen(pwd_global)-i+5],i);
+			strcat(tmp,path);
+			strcpy(path,"");
+			strcpy(path,tmp);
+			ret=verif_exist_rep_in_tar(tar_actuel,path,entete_lu);
+			if(ret) {
+				ret++;
+				int i=strlen(strstr(pwd_global,".tar/"));
+				int k=0;
+				int j;
+				for(j=strlen(pwd_global) - i + 5 ;j<strlen(pwd_global) - i + 5+ strlen(path);j++){
+					pwd_global[j]=path[k];
+					k++;
+				}
+				pwd_global[j+1]='\0';
+			}else{
+				write(1,"cd  : Le répértoire n'existe pas\n",sizeof("cd  : Le répértoire n'existe pas\n"));
+			}
 		}
 	}else{
-		char *pwd= getcwd(NULL, 0);
+
+		char pwd[1024]; 
+		strcpy(pwd,pwd_global);
 		char origin[100]="";
 		strcpy(origin,pwd);
 		char *chemin=strcat(pwd,"/");
 		strcat(chemin,path);
 		int flag=chdir(chemin);
+		if ((flag < 0 )&&(strstr(chemin,".tar/") == NULL)){
+			write(1,"cd  : Le répértoire n'existe pas\n",sizeof("cd  : Le répértoire n'existe pas\n"));
+			return -1 ;
+		}
 		if(flag == 0) {
 			ret=1;
+			if(strcmp(path,"./")==0)
+				ret=4;
 			chdir(origin);
 		}else{
 			//tester si path inclus un tar 
 			//on cherche à se déplacer dans un tar 
-			strcpy(path,"");
-			strcpy(path,chemin);
-			strcpy(chemin_absolu,path);
+			if(path[0] != '/'){
+				strcpy(path,"");
+				strcpy(path,chemin);
+				strcpy(chemin_absolu,path);
+			}
 			int i=strlen(strstr(path,".tar/"));
 			if(i>0){
 				char sub_path[100]="";
@@ -303,10 +376,14 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 				strcpy(tmp_tar,rev);
 				strcat(tmp_tar,".tar");
 				char parent_dir_of_tar[100]="";
-				strncpy(parent_dir_of_tar,chemin_absolu,strlen(chemin_absolu)-i-1);
+				if(path[0] != '/'){
+					strncpy(parent_dir_of_tar,chemin_absolu,strlen(chemin_absolu)-i-1);
+				}else{
+					strncpy(parent_dir_of_tar,path,strlen(path)-i-1);
+				}
 				chdir(parent_dir_of_tar);
 				ret=verif_exist_rep_in_tar(tmp_tar,sub_path,entete_lu);
-				if(ret){
+				if(ret>0){
 					ret++;
 					ret++;
 					//modification des variable globales tar actuel et in_tar et pwd_global
@@ -315,6 +392,10 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 					in_tar=1;
 					strcpy(pwd_global,"");
 					strcpy(pwd_global,path);
+				}else{
+					chdir(origin);
+					strcpy(pwd_global,"");
+					strcpy(pwd_global,origin);
 				}
 			}
 		}
@@ -329,36 +410,49 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 ***/
 
 void my_cd_global(char *path){
-	
-//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant , sinon si il existe dans un des tar de cette hièrarchie
-	int *entete_lu=malloc(sizeof(int));
+	int *entete_lu=malloc(sizeof(int*));
 	char chemin_absolu[100]="";
-	int check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
-	char wd[1024];
-	if(check_path>0){
+	int check_path;
+	if(path[0] == '/'){//chemin absolue
+		if(strstr(path,".tar/") == NULL){//outtar
+			my_cd(path);
+		}else{//totar
+			check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
+			
+		}
+	}else{
+		//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant
+		
+		
+		int prev_in_tar=in_tar;
+		check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
+		char wd[1024];
+		if(check_path>0 && check_path != 4){
 
-			//si le répértoire existe inclus un tar in_tar=1
-			//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
-			//sinon erreur
+				//si le répértoire existe inclus un tar in_tar=1
+				//sinon in_tar=0 et le répértoire est simple (inclus pas un tar)
+				//sinon erreur
 	
-				//déplacement
-				if(in_tar){//wd est dans un tar et l'arrivée est dans un tar
-					//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
-					//modification de pwd_global
-					// check_path doit être à 1
-					deplacement_in_tar(chemin_absolu,*entete_lu);
-				}else{
-					if(check_path == 3){//premier déplacement vers un répértoire dans le tar //on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
-						//déplacement vers le répértoire et récupération du contenu dans un buffer pour pouvoir faire des opérations sur ce dernier
+					//déplacement
+					if(prev_in_tar){//wd est dans un tar et l'arrivée est dans un tar
+					
 						//modification de pwd_global
+						// check_path doit être à 1
 						deplacement_in_tar(chemin_absolu,*entete_lu);
 					}else{
+						if(check_path == 3){//premier déplacement vers un répértoire dans le tar 
+											//on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
+							 
+							//modification de pwd_global
+							deplacement_in_tar(chemin_absolu,*entete_lu);
+						}else{
 
-						my_cd(path);
+							my_cd(path);
+						}
 					}
-				}
 		}
-	
+		
+	}
 }
 /***
 	verif_exist_rep_in_tar: liste des fichiers et répértoire dans un fichier tar
@@ -725,7 +819,7 @@ void recupArgs(char *entree,char **listeArgs){
 
 
 /***
-	commandeValide : la commande qui vérifie si une commande existe dans le shell (i.e. existe dans le tableau des commande ) et execute cette dernière .
+	commandeValide : la commande qui vérifie si une commande existe dans le shell (i.e. existe dans le tableau des commande ) .
 	@entrées :commande sous forme de chaine de caractère  
 	@sorties :booléen
 
@@ -743,11 +837,10 @@ int commandeValide(char **listeArgs){
 		i++;
 	}
 	if(exist){
-		//TODO:éxecution de la commande
-		printf("la commande existe dans le shell\n");
+		//printf("la commande existe dans le shell\n");
 		return 1;
 	}else{
-		printf("la commande n'existe pas dans le shell\n");
+		//printf("la commande n'existe pas dans le shell\n");
 		return 0;
 	}
 }
@@ -791,7 +884,7 @@ int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe){
 	sorties: extension
 
 	on va se contenter de tester l'extention du fichier pour savoir si c'est un tar 
-	c'est pas toujours vrai mais on va supposer que y'a pas de fcihier non intègre 
+	c'est pas toujours vrai mais on va supposer que y'a pas de fichier non intègre 
 	car l'utilisation de la commande tar est interdite on pourras pas tester l'integrité d'un fichier tar autrement
 ***/
 const char *recup_ext(const char *filename) {
@@ -810,6 +903,63 @@ int startsWith(const char *pre, const char *str)
     size_t lenpre = strlen(pre),
            lenstr = strlen(str);
     return lenstr < lenpre ? 0 : memcmp(pre, str, lenpre) == 0;
+}
+/***
+	countoccurrences : la fnction avec laquelle on calcule le nombre de fois ou toSearch apparait dans str
+	entrées : deux chaines de caractères
+	sorties : entier (nombre d'occurences)
+***/
+int countOccurrences(char * str, char * toSearch)
+{
+    int i, j, found, count;
+    int stringLen, searchLen;
+
+    stringLen = strlen(str);      // length of string
+    searchLen = strlen(toSearch); // length of word to be searched
+
+    count = 0;
+
+    for(i=0; i <= stringLen-searchLen; i++)
+    {
+        
+        found = 1;
+        for(j=0; j<searchLen; j++)
+        {
+            if(str[i + j] != toSearch[j])
+            {
+                found = 0;
+                break;
+            }
+        }
+
+        if(found == 1)
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+/***
+	chop : la fonction avec laquelle on supprime les n premier caractères d'un chaine de caractères 
+	entrées : pointeur vers une chaine de caractères et le nombre n de caractères à supprimer
+	sorties : void ( modifie directement sur la chaine en question )
+***/
+void chop(char *str, size_t n)
+{
+    assert(n != 0 && str != 0);
+    size_t len = strlen(str);
+    if (n > len)
+        return;  // Or: n = len;
+    memmove(str, str+n, len - n + 1);
+}
+/***
+	my_exit : la fonction avec laquelle on quitte zfi shell
+	entrées: void
+	sorties : void
+***/
+void my_exit(){
+	exit(EXIT_SUCCESS);
 }
 /****
 partie rm
@@ -864,7 +1014,7 @@ void rm_in_tar(int fd,char file_name[100])
 	int n=0;
 	int ret=0;
 	int entete_a_lire;
-	struct posix_header *st =malloc(sizeof(struct posix_header));
+	struct posix_header *st =malloc(sizeof(struct posix_header*));
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
 		
                 st= (struct posix_header *) buf;
@@ -957,7 +1107,10 @@ if (in_tar==0){
            close(fd);
    }
 }else{ // on est dans un tarball 
-   		fd= open_tar_file(str);
+		char tmp[1024]="";
+		strcpy(tmp,pwd_global);
+		strcat(tmp,chaine);
+   		fd= open_tar_file(tmp);
            if (fd<0) // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
            {
               
@@ -966,12 +1119,13 @@ if (in_tar==0){
            }
            // si le chemin vers le tarball existe et que ce dernier est bien ouvert
            // on recupere le chemin jusqu'au tar et on recupere la suite du chemain dans une autre chaine
-           i = strlen(strstr(chaine,".tar/")); 
-           strncpy(str,&chaine[strlen(chaine)- i + 5 ] , i );
+           i = strlen(strstr(tmp,".tar/")); 
+           strncpy(str,&chaine[strlen(tmp)- i + 5 ] , i );
            rm_in_tar(fd,str); 
            close(fd);
   	 
   	
 	}
 }
+
 

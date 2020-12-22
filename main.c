@@ -4,34 +4,36 @@
 
 
 int main(int argc,char **argv){
-/*
+
 	//Programme principal
 	//Variables pour la récupération des commandes 
 	char entree[MAXENTREE] ;
 	char *listeArgs[MAXCMDs];
-	char *listeArgsPipe[MAXCMDs]
-	
+	char *listeArgsPipe[MAXCMDs];
+	//char pwd_g[1024]="";
 	//Initialisation du shell
 	Initialiser_shell();
-	
+	strcpy(pwd_global,getcwd(NULL,0));
 	for(ever){
 		//Afficher le répértoire courant 
-		my_pwd()
+		
+		my_pwd_global();
+		printf("%s",pwd_global);
 		//récupérer l'entrée à partir de la ligne de commande 
 		int recup = recupEntry(entree) ;
 		
 		//Analyse de la commande 
-		int cas = décortiquerEntree(entree,listeArgs,listeArgsPipe)
-		if (cas == 2){
+		int cas = decortiquerEntree(entree,listeArgs,listeArgsPipe);
+		if (cas == 1){
 			executerCmdSimple(listeArgs);
 		}
-		if( cas == 3){
-			executerCmdComplexe(listeArgsPipe);
+		if( cas == 2){
+			//executerCmdComplexe(listeArgsPipe);
 		}
 		
-	}
+}
 
-*/
+
 	
 /*	
 	//test de la fonction trouverPipe	
