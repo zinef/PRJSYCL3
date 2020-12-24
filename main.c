@@ -4,11 +4,14 @@
 
 
 int main(int argc,char **argv){
+	
 
-	signal(SIGINT , stop);
-	//std_out_copy   = dup(STDOUT_FILENO);
-    	//std_error_copy = dup(STDERR_FILENO);
-    	//std_in_copy    = dup(STDIN_FILENO );
+
+/*	signal(SIGINT , stop);
+	std_out_copy   = dup(STDOUT_FILENO);
+    	std_error_copy = dup(STDERR_FILENO);
+    	std_in_copy    = dup(STDIN_FILENO ); */
+
 	//Programme principal
 	//Variables pour la récupération des commandes 
 	char entree[MAXENTREE] ;
@@ -143,5 +146,16 @@ int main(int argc,char **argv){
 	strcpy(pwd_global,"/home/zizou/Bureau/SYCL3/prjsycl3/toto.tar/");
 	int ret= my_rmdir("rep2");
 */
+/*
+	//test typique pour les redirection avec un cat en stdin 
+	signal(SIGINT , stop);
+	std_out_copy   = dup(STDOUT_FILENO);
+    	std_error_copy = dup(STDERR_FILENO);
+    	std_in_copy    = dup(STDIN_FILENO );
+	strcpy(pwd_global,getcwd(NULL,0));
+	char *out_file;
+	int fd=redirect_res("zizou.txt",out_file, ">");
+	cat ("");
+	end_redirect("zizou.txt",fd,out_file,">");*/
 	return 0;
 }
