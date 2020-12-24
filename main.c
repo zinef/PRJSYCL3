@@ -5,6 +5,10 @@
 
 int main(int argc,char **argv){
 
+	signal(SIGINT , stop);
+	//std_out_copy   = dup(STDOUT_FILENO);
+    	//std_error_copy = dup(STDERR_FILENO);
+    	//std_in_copy    = dup(STDIN_FILENO );
 	//Programme principal
 	//Variables pour la récupération des commandes 
 	char entree[MAXENTREE] ;
@@ -32,7 +36,6 @@ int main(int argc,char **argv){
 		}
 		
 }
-
 
 	
 /*	

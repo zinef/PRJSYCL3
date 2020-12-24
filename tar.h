@@ -29,6 +29,7 @@ struct posix_header
   char junk[12];                /* 500 */
 };                              /* Total: 512 */
 
+typedef struct posix_header  posix_header;
 #define TMAGIC   "ustar"        /* ustar and a null */
 #define TMAGLEN  6
 #define TVERSION "00"           /* 00 and no null */
