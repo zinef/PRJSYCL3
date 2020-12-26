@@ -57,8 +57,8 @@ struct command
 int trouverPipe(char *entree,char **commandesSiPipe);
 void Initialiser_shell();
 int recupEntry(char *ch);
-void executerCmdSimple(char *cmd[]);
-void recupArgs(char *entree,char **listeArgs);
+void executerCmdSimple(char *cmd[],char *entry);
+void recupArgs(char *entree,char **listeArgs,char sep[1]);
 int commandeValide(char **listeArgs);
 int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);
 char* my_pwd_global();
@@ -112,4 +112,7 @@ int redercet_stdout(char ch[100],char *out_file,int type);
 int redercet_stdin(char ch[100]);
 int redirect_res(char ch[100],char *out_file,char type[10]);
 void end_redirect(char ch[100],int fd ,char *out_file,char type[10]);
+//cp et mv
+void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file);
+
 #endif //__OUR_SHELL_ZFI_INCLUDED__

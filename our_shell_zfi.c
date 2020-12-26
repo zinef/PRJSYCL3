@@ -17,7 +17,7 @@ void Initialiser_shell(){
 	printf("\n \tBienvenu @%s \n",id);
 	printf("\n***********************************\n");
 	printf("\n***********************************\n");
-	sleep(2);
+	sleep(1);
 	printf("\033[H\033[J");
 
 }
@@ -54,7 +54,8 @@ int recupEntry(char *ch){
 
 ***/
 
-void executerCmdSimple(char *cmd[]){
+void executerCmdSimple(char *cmd[],char *entry){
+	//">"  ">>"  "<"  "2>"  "2>>"  "2>&1"  "2>>&1"
 	
 	if(strcmp(cmd[0],"cd") == 0){
 		if(strcmp(cmd[1],"") != 0)
@@ -88,7 +89,8 @@ void executerCmdSimple(char *cmd[]){
 								if(strcmp(cmd[0],"cat")==0){
 									cat(cmd[1]);
 								}else{	
-									write(1,"zfi : La commande n'existe pas\n",sizeof("zfi : La commande n'existe pas\n"));
+								
+		write(1,"zfi : La commande n'existe pas\n",sizeof("zfi : La commande n'existe pas\n"));						
 								}
 							}
 						}
@@ -807,7 +809,7 @@ int trouverPipe(char *entree,char **commandesSiPipe){
 
 
 ***/
-void recupArgs(char *entree,char **listeArgs){
+void recupArgs(char *entree,char **listeArgs,char sep[1]){
 
 	int indiceArg=0;
 	int stop=0;
@@ -859,21 +861,21 @@ int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe){
 	
 	//là ou on va récuperer la liste des commande si l'entrée est pipé
 	char *commandesSiPipe[MAXCMDs];
-
+	char sep[1]={" "};
 	//on teste si l'entree est une commande complexe
 	int complexe = trouverPipe(entree,commandesSiPipe);
 	if(complexe){//i.e il existe au moins un pipe
 		//analyse de chaque commande seul pour pouvoir déterminer tous les arguments
-		recupArgs(commandesSiPipe[0], listeArgs );
+		recupArgs(commandesSiPipe[0], listeArgs ,sep);
 		for(int i=1 ;i<MAXCMDs;i++){
 			if (commandesSiPipe[i] != NULL){
-				recupArgs(commandesSiPipe[i], listeArgsPipe );
+				recupArgs(commandesSiPipe[i], listeArgsPipe ,sep);
 			}else{
 				break;
 			}
 		}
 	}else{
-		recupArgs(entree,listeArgs);
+		recupArgs(entree,listeArgs ,sep);
 	}
 	
 	//tester si la commande est une commande valide dans le shell
@@ -918,8 +920,8 @@ int countOccurrences(char * str, char * toSearch)
     int i, j, found, count;
     int stringLen, searchLen;
 
-    stringLen = strlen(str);      // length of string
-    searchLen = strlen(toSearch); // length of word to be searched
+    stringLen = strlen(str);      
+    searchLen = strlen(toSearch); 
 
     count = 0;
 
@@ -945,7 +947,7 @@ int countOccurrences(char * str, char * toSearch)
     return count;
 }
 /***
-	chop : la fonction avec laquelle on supprime les n premier caractères d'un chaine de caractères 
+	chop : la fonction avec laquelle on supprime les n premier caractères d'une chaine de caractères 
 	entrées : pointeur vers une chaine de caractères et le nombre n de caractères à supprimer
 	sorties : void ( modifie directement sur la chaine en question )
 ***/
@@ -2075,4 +2077,429 @@ void end_redirect(char ch[100],int fd ,char *out_file,char type[10]){
         return;
     }
 }
+//cp et mv 
+char *recupere_nom(char *path)
+{
 
+	char *pend;
+	if((pend=strrchr(path, '/'))!=NULL){
+		return pend +1 ;
+	}else{
+		return path;
+	}
+}
+
+void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file){
+
+int stop=0,p=0,size=0,EnteteAlire=0;
+char buff[512]="";
+
+ struct posix_header *st =malloc(sizeof(struct posix_header));
+ while((stop==0)&&((p=read(fd,buff,BLOCKSIZE))>0)){
+		
+        st= (struct posix_header *) buff;
+		// on teste si on est pas arrivé à la fin 
+        if((st->name)[0] == '\0'){
+	            stop=1;
+                *entete = EnteteAlire; //sauvegarde derniere entete destination        
+                *trouv=0;
+		}
+		if (strcmp(st->name, nomfic)==0){
+			stop=1;        
+			*entete=EnteteAlire;
+			*trouv= 1;
+		}
+		// on récupère la taille du fichier 
+		sscanf(st->size,"%o",&size);
+		*size_file=size;
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);// >>BLOCKBITS = /512
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1; 
+		}
+
+		lseek(fd,EnteteAlire*512,SEEK_SET);
+	} 
+}
+
+void cp_destination_tar(char source[100], char destination[100]) {
+    int fd1, fd2, errno, nbread, nblus, nbtotal = 0;
+    int fd, i, j, n, m;
+    int erreur = 0;
+    char sr[100], ds[100], str[100], str1[100], str2[100], nom[100], nomfic[100], str3[100] ,nomf[100]="";
+    char buff[512];
+	
+    int stop = 0, stop2 = 0, p, EnteteAlire = 0, entete_a_lire;
+    int size = 0;
+    char origine[100];
+
+    // 1.2- source comporte pas tar --> destination  tar
+
+    //2-  on essaie d'ouvrir le tar de destination pour savoir s'il existe 
+    fd2 = open_tar_file(destination);
+    if (fd2 < 0) {
+        // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+        printf("le chemin destination que vous avez introduit n'est pas    valide");
+        exit(EXIT_FAILURE);
+    }
+    //  dans ce cas le tarball est bien ouvert <=> il existe et le chemin est correcte  
+
+    //3- on récupere le nom du fichier dans la source ainsi ou il doit etre mis
+    strcpy(nomf ,recupere_nom(source));
+    strcpy(nomfic, nomf);
+    int z = strlen(strstr(destination, ".tar/"));
+    char suite[100] = "";
+    strncpy(suite, & destination[strlen(destination) - z + 5], z);
+    if (strcmp(suite, "") != 0) {
+
+        strcat(suite, nomfic);
+        strcpy(nomfic, "");
+        strcpy(nomfic, suite);
+    }
+    // maintenant dans nom fic, on a le chemin apartir du tar vers le fichier a copier 
+
+    //4- maintenant on effectue une recherche du fichier dans le tarball pour savoir si il nexiste pas   
+    int trouv = 0, entete = 0, size1 = 0;
+    recherche_tar(fd2, nomfic, & trouv, & entete, & size1);
+    if (trouv == 1) {
+        printf("\n le fichier %s existe déja à la destination \n", nomfic);
+        exit(EXIT_FAILURE);
+    }
+    if (trouv == 0) {
+
+        lseek(fd2, entete * BLOCKSIZE, SEEK_SET);
+        fd1 = open(source, O_RDONLY);
+        if (fd1 < 0) {
+            if (errno == ENOENT)
+                printf("\nVotre chemin n'est pas valide, veuillez réessayer ! \n");
+        }
+        //récupération des caractéristiques du fichier source
+        struct stat * statbuf = malloc(sizeof(struct stat * ));
+        int ret = fstat(fd1, statbuf);
+        if (ret < 0) {
+            exit(EXIT_FAILURE);
+        }
+
+        //création de l'entête du fichier à ajouter 
+        int sizefile = statbuf -> st_size;
+        char buf[512] = "";
+        char * uid = getenv("USER");
+        struct posix_header * st = malloc(sizeof(struct posix_header * ));
+
+        st = (struct posix_header * ) buf;
+        strcpy(st -> name, nomfic);
+        sprintf(st -> size, "%o", sizefile);
+        st -> typeflag = '0';
+        sprintf(st -> mode, "0000700");
+        //time(&t);
+        //sprintf(st->mtime, "%ld",t);
+        sprintf(st -> uid, "%d", getuid());
+        sprintf(st -> gid, "%d", getuid());
+        strcpy(st -> uname, uid);
+        strcpy(st -> gname, uid);
+        strcpy(st -> magic, TMAGIC);
+        strcpy(st -> version, TVERSION);
+        set_checksum(st);
+        //écriture de l'entete
+        int w = write(fd2, st, BLOCKSIZE);
+        if (w < 0) {
+            perror("\n Erreur dans la copie veuillez réesayer\n");
+            exit(EXIT_FAILURE);
+        }
+        int nblus;
+        while ((nblus = read(fd1, buff, BLOCKSIZE)) > 0) {
+            write(fd2, buff, BLOCKSIZE);
+        }
+
+    }
+
+    close(fd1);
+    close(fd2);
+}
+
+void cp_source_destination_tar(char source[100], char destination[100]) {
+
+    char src[100] = "", nomfic2[100] = "", suite[100] = "", nomfic[100] = "";
+    char suite_dest[100] = "", exist_dest[100] = "", suite_source[100] = "";
+    char buffer[512] = "", buff[512] = "", buf[512] = "",nomf[100]="";
+
+    int fd1, fd2, trouv = 0, entete = 0, size1 = 0, trouv2 = 0, entete2 = 0, size2 = 0, nblus = 0, nbread = 0;
+
+    strcpy(src, source);
+    //1-  on essaie d'ouvrir les tars pour savoir s'ils existent 
+    fd1 = open_tar_file(source);
+    if (fd1 < 0) {
+        // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+        printf("le chemin que vous avez introduit n'est pas valide");
+        exit(EXIT_FAILURE); // on sort 
+    }
+
+    fd2 = open_tar_file(destination);
+    if (fd2 < 0) {
+        // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+        printf("le chemin que vous avez introduit n'est pas valide");
+        exit(EXIT_FAILURE); // on sort 
+    }
+
+    //2- on récupere le chemin ou il devra etre a la destination
+
+    strcpy(nomf ,recupere_nom(source)); // on recupere le nom tout seul 
+    strcpy(nomfic, nomf); // nomfic= nom du fichier 
+    int z = strlen(strstr(destination, ".tar/"));
+
+    strncpy(suite, & destination[strlen(destination) - z + 5], z);
+    if (strcmp(suite, "") != 0) {
+
+        strcat(suite, nomfic);
+        strcpy(nomfic, "");
+        strcpy(nomfic, suite);
+    }
+    // nomfic= /dst/f1.txt destinaion
+
+    // 3- on recupere le chemin du fichier a la source 
+    // on cherche le chemin vers le fichier dans la source 
+
+    int l = strlen(strstr(src, ".tar/"));
+
+    strncpy(suite_source, & src[strlen(src) - l + 5], l);
+    strcpy(nomfic2, suite_source);
+    // nomfic2= src/f1.txt
+
+    // 4 on recherche le fichier source
+
+    recherche_tar(fd1, nomfic2, & trouv, & entete, & size1);
+    int block = size1 >> BLOCKBITS;
+    if (trouv == 0) {
+        printf("\n Le fichier source n'existe pas veuillez verifier votre chemin\n");
+        exit(EXIT_FAILURE);
+    }
+    if (trouv == 1) {
+
+        strcpy(exist_dest, destination);
+        int l = strlen(strstr(exist_dest, ".tar/"));
+        strncpy(suite_dest, & exist_dest[strlen(exist_dest) - l + 5], l);
+        int trouv3 = 0, entete3, size3;
+        recherche_tar(fd2, suite_dest, & trouv3, & entete3, & size3);
+        if (trouv3 == 0) {
+            printf("le chemin destination est invalide \n");
+            exit(EXIT_FAILURE);
+        } else {
+            recherche_tar(fd2, nomfic, & trouv2, & entete2, & size2);
+            if (trouv2 == 1) {
+                printf("\n Le fichier existe deja a la destination \n");
+                exit(EXIT_FAILURE);
+            }
+            if (trouv2 == 0) {
+                lseek(fd1, entete * BLOCKSIZE, SEEK_SET);
+                lseek(fd2, entete2 * BLOCKSIZE, SEEK_SET);
+                strcpy(buff, "");
+
+                struct posix_header * s3 = malloc(sizeof(struct posix_header * ));
+                //6-on copie l'enetete dans le nv fichier 
+
+                if (nbread = read(fd1, buffer, BLOCKSIZE) > 0) {
+                    s3 = (struct posix_header * ) buffer;
+                    strcpy(s3 -> name, nomfic);
+                    set_checksum(s3);
+                    write(fd2, s3, BLOCKSIZE);
+                }
+                //7-on copie le contenu du fichier source vers dest
+                for (int k = 0; k < block; k++) {
+                    //on recupere les block eton les insère au fichier 
+                    if ((nblus = read(fd1, buffer, BLOCKSIZE)) > 0) {
+                        write(fd2, buffer, BLOCKSIZE);
+                    }
+                }
+
+            }
+
+        }
+    }
+    strcpy(nomfic, "");
+    strcpy(nomfic2, "");
+    close(fd1);
+    close(fd2);
+}
+
+void cp_normal(char source[100], char destination[100]) {
+    char buff[512], origine[100],nomf[100]="";
+    int fd1, fd2, nbread;
+
+    //1-on verifie qu'on a recu deux arguments 
+    if (source == NULL || destination == NULL) {
+        printf("\nSyntaxe erreur: cp source_du_fichier destination_du_fichier\n");
+        printf("Erreur dans les paramètres\n");
+        exit(EXIT_FAILURE);
+    }
+
+    //2- on vérifie si la source= destination le fichier ne sera pas copier comme  on aura juste une duplication. 
+
+    if (strcmp(source, destination) == 0) {
+        printf("le fichier %s existe déja à la destination \n", source);
+        exit(EXIT_FAILURE);
+    }
+
+    char chemin[100] = "";
+
+    strcpy(nomf ,recupere_nom(source)); // on recupere le nom tout seul 
+    strcpy(chemin, destination);
+    strcat(chemin, nomf);
+    if ((strcmp(source, destination) == 0) || (open(chemin, O_RDONLY)) != -1) {
+        printf("le fichier %s existe déja à la destination \n", nomf);
+        exit(EXIT_FAILURE);
+    }
+
+    //3- si les parametres sont bien entrés et different on ouvre le fichier source 
+
+    fd1 = open(source, O_RDONLY);
+    if (fd1 < 0) {
+        if (errno == ENOENT) {
+            printf("\nVeuillez vérifier le nom du fichier \n");
+        }
+    }
+
+    //4- Si le fichier source est bien ouvert, on ouvre le fichier destination avec les modes d'ecriture et de création 
+
+    getcwd(origine, sizeof(origine)); // on sauvgarde le chemin actuel
+    chdir(destination); // on a vers la destination
+    char * n = recupere_nom(source);
+    fd2 = open(n, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    if (fd2 < 0) {
+        printf("\nErreur dans l'ouverture du fichier %s \n errno : %d \n", destination, errno);
+        exit(EXIT_FAILURE);
+    }
+
+    chdir(origine); //on reviens vers l'origine 
+
+    //5- Si le fichier destination est bien ouvert, tout est bien passé, on commence le transfert des données de source vers destination 
+
+    while ((nbread = read(fd1, buff, sizeof(buff))) && nbread > 0) {
+        if (write(fd2, buff, nbread) < 0) {
+            printf("\nErreur dans la copie des fichiers, veuillez réesayer\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    //6- On ferme les fichiers 
+
+    if (close(fd1) == -1)
+        printf("Erreur dans la fermeture du fichier du fichier %s ", source);
+    if (close(fd2) == -1)
+        printf("Erreur dans la fermeture du fichier du fichier %s ", destination);
+
+}
+
+void cp_source_tar(char source[100], char destination[100]) {
+    int fd1, fd2, trouv = 0, entete = 0, size1 = 0, nblus = 0, size = 0;
+    char chemin[100] = "", origine[100] = "", nomfic[100] = "", buff[512] = "", buf[512] = "",nomf[100]="";
+
+    //1-  on essaie d'ouvrir le tar pour savoir s'il existe 
+    fd1 = open_tar_file(source);
+    if (fd1 < 0) {
+        // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+        printf("le chemin que vous avez introduit n'est pas valide");
+        exit(EXIT_FAILURE); // on sort 
+    }
+    //  dans ce cas le tarball est bien ouvert <=> il existe et le chemin est correcte  
+	int i;
+	if(strstr(source,".tar/") != NULL){
+		i=strlen(strstr(source,".tar/"));
+	}else{
+		i=0;
+	}
+	char suite[100]="";
+	strncpy(suite,&source[strlen(source)-i+5],i);
+    //2- on récupere le nom du fichier dans la source
+    char * str3 = recupere_nom(source);
+    strcpy(nomfic, suite);
+	
+    strcpy(nomf ,recupere_nom(source)); // on recupere le nom tout seul 
+    strcpy(chemin, destination);
+    strcat(chemin, nomf);
+    if ((strcmp(source, destination) == 0) || (open(chemin, O_RDONLY)) != -1) {
+        printf("le fichier %s existe déja à la destination \n", nomf);
+        exit(EXIT_FAILURE);
+    }
+
+    //3- maintenant on effectue une recherche du fichier dans le tarball pour recuperer ses informations  
+
+    recherche_tar(fd1, nomfic, & trouv, & entete, & size1);
+    int block = size1 >> BLOCKBITS; //recuperer le nombre de block de fichier
+    if (trouv == 0) {
+        printf("\n le fichier %s n'existe pas \n", nomfic);
+        exit(EXIT_FAILURE);
+    }
+    if (trouv == 1) {
+        //-4 on a toruvé le fichier a copier et tout va bien donc creer la destination , et le fichier destination n'est pas dans un tarball on le creer s'il existe pas ou on l'ecrase 
+        char * n = recupere_nom(source);
+        getcwd(origine, sizeof(origine)); // on sauvgarde le chemin actuel
+        chdir(destination); // on a vers la destination
+        fd2 = open(n, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+        if (fd2 < 0) {
+            printf("\nErreur dans l'ouverture du fichier %s . errno : %d \n", destination, errno);
+            exit(EXIT_FAILURE);
+        }
+        chdir(origine);
+        //5-on se positionne au bonnes positions 
+
+        lseek(fd1, 0, SEEK_SET); // on se repositionne au debut fchier source
+        lseek(fd1, entete * BLOCKSIZE, SEEK_SET); //on va directement a lentete concernée 
+
+        if ((nblus = read(fd1, buff, BLOCKSIZE) > 0)) {
+
+        } else {
+            exit(EXIT_FAILURE);
+        }
+
+        //6-on copie le contenu 
+        for (int k = 0; k < block; k++) {
+            //on recupere les block du contenu et on les insère au fichier 
+            if ((nblus = read(fd1, buf, BLOCKSIZE)) > 0) {
+                write(fd2, buf, nblus);
+            }
+        }
+    }
+}
+
+int cp(char source[100], char destination[100]) {
+
+    int fd1, fd2, errno, nbread, nblus, nbtotal = 0;
+    int delete, reussi, fd, i, j, n, m;
+    int erreur = 0;
+    char sr[100], ds[100], str[100], str1[100], str2[100], nom[100], nomfic[100], str3[100];
+    char buff[512];
+    char buf[512];
+    int stop = 0, stop2 = 0, p, EnteteAlire = 0, entete_a_lire;
+    int size = 0;
+    char origine[100];
+    strcpy(str1, source);
+    strcpy(str2, destination);
+
+    if ((strstr(str1, ".tar/") == NULL) && (strstr(str2, ".tar/") == NULL)) {
+        //  Fonctionnement normal de cp /
+        cp_normal(source, destination);
+        exit(EXIT_FAILURE);
+
+    } else {
+        // la source OU la destination implique un tarball // 
+
+        if ((strstr(source, ".tar/") != NULL) && (strstr(destination, ".tar/") == NULL)) {
+            // 1.1- source comporte tar --> destination sans tar 
+            cp_source_tar(source, destination);
+            exit(EXIT_FAILURE);
+        }
+
+        if ((strstr(source, ".tar/") == NULL) && (strstr(destination, ".tar/") != NULL)) {
+            // 1.2- source comporte pas tar --> destination  tar
+            cp_destination_tar(source, destination);
+            exit(EXIT_FAILURE);
+        }
+
+        if ((strstr(source, ".tar/") != NULL) && (strstr(destination, ".tar/") != NULL)) {
+            // 1.3- source comporte tar --> destination comporte  tar 
+            cp_source_destination_tar(source, destination);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
