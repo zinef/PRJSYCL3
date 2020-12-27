@@ -22,8 +22,9 @@
 
 #define ever ;;
 #define MAXCMDs 10
+#define MAXARGs 10
 #define MAXENTREE 1024 
-#define NBCMD 8
+#define NBCMD 10
 #define NBPARAMS 10
 #define NBOPTIONS 10
 #define BLOCKSIZE 512
@@ -40,7 +41,7 @@ char strTmp[255];
 char Buffer[BLOCKSIZE];//buffer pour lectures et ecritures (utilisé par certaines fonctions)
 int std_out_copy , std_error_copy , std_in_copy; //des variables pour sauvgarder les entrées et sorties
 /*la liste des commandes valables dans le Shell */
-char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat"};
+char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat","cp","clear"};
 /*la structure d'une commande */
 struct Commande{
 	char nomCommande[30];
@@ -51,16 +52,17 @@ struct Commande{
 };
 struct command
 {
-  const char **argv;
+   char **argv;
 };
 /*les prototypes des fonctions */
 int trouverPipe(char *entree,char **commandesSiPipe);
 void Initialiser_shell();
 int recupEntry(char *ch);
-void executerCmdSimple(char *cmd[],char *entry);
-void recupArgs(char *entree,char **listeArgs,char sep[1]);
+void executerCmdComplexe(char *cmd[]);
+void executerCmdSimple(char *cmd[]);
+void recupArgs(char *entree,char **listeArgs);
 int commandeValide(char **listeArgs);
-int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);
+int decortiquerEntree(char *entree,char **listeArgs,char **commandesSiPipe);
 char* my_pwd_global();
 void my_cd(char *fic);
 void my_cd_global(char *path);
@@ -77,8 +79,8 @@ int startsWith(const char *pre, const char *str);
 int countOccurrences(char * str, char * toSearch);
 void chop(char *str, size_t n);
 void my_exit();
-int dupliquer_proc (int in, int out, struct command *cmd);
-int fork_pipes (int n, struct command *cmd);
+void dupliquer_proc (int in, int out, struct command *cmd);
+void fork_pipes (int n, struct command *cmd);
 //rm 
 int  open_tar_file(char ch[100]);
 int get_file_size(struct posix_header *header);
@@ -112,7 +114,16 @@ int redercet_stdout(char ch[100],char *out_file,int type);
 int redercet_stdin(char ch[100]);
 int redirect_res(char ch[100],char *out_file,char type[10]);
 void end_redirect(char ch[100],int fd ,char *out_file,char type[10]);
+int parssing_red(char chainne[100],char *listArgsRed[100]);
+char* get_type (char symb[8],char before);
 //cp et mv
 void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file);
-
+int open_tar_file_rdwr(char ch[100]);
+int checkIfValide(char source[100], char destination[100]);
+int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD, posix_header *st);
+void cp_normal(char source[100], char destination[100]);
+int cp_source_tar(char source[100], char destination[100]);
+int cp_destination_tar(char source[100], char destination[100]);
+void cp_source_destination_tar(char source[100], char destination[100]);
+void cp (char source[100], char destination[100]);
 #endif //__OUR_SHELL_ZFI_INCLUDED__

@@ -14,9 +14,9 @@ int main(int argc,char **argv){
 
 	//Programme principal
 	//Variables pour la récupération des commandes 
-	char entree[MAXENTREE] ;
+	char entree[MAXENTREE];
 	char *listeArgs[MAXCMDs];
-	char *listeArgsPipe[MAXCMDs];
+	char *commandesSiPipe[MAXCMDs];
 	//char pwd_g[1024]="";
 	//Initialisation du shell
 	Initialiser_shell();
@@ -30,18 +30,19 @@ int main(int argc,char **argv){
 		int recup = recupEntry(entree) ;
 		
 		//Analyse de la commande 
-		int cas = decortiquerEntree(entree,listeArgs,listeArgsPipe);
+		int cas = decortiquerEntree(entree,listeArgs,commandesSiPipe);
 		if (cas == 1){
-			executerCmdSimple(listeArgs,entree);
+			executerCmdSimple(listeArgs);
 			
 		}
 		if( cas == 2){
-			//executerCmdComplexe(listeArgsPipe);
+			executerCmdComplexe(commandesSiPipe);
 			
 		}
-		
+		if(cas == 0){
+			write(1,"zfi : No such command\n",sizeof("zfi : No such command\n"));	
+		}
 	}
-
 
 	return 0;
 }

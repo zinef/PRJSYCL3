@@ -287,7 +287,7 @@ void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_fi
 	} 
 }
 
-int open_tar_file_rdwr(char ch[100]){////zinou pas la meme que rm car hadi read
+int open_tar_file_rdwr(char ch[100]){
     char s[100];
     char str2[100];
     strcpy(s,ch);
