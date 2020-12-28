@@ -30,6 +30,13 @@
 #define BLOCKSIZE 512
 #define BLOCKBITS 9
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 static volatile int running = 1;
 
@@ -86,7 +93,7 @@ int  open_tar_file(char ch[100]);
 int get_file_size(struct posix_header *header);
 void seek_n_block(int fd ,int nb_block);
 void seek_next_entete (int fd ,struct posix_header *header);
-int rm_in_tar(int fd,char file_name[100]);
+int rm_in_tar(int fd,char file_name[100],char chaine[100]);
 int rm(char chaine[100]);
 //ls ,cat ,redirections
 void stop(int a);
@@ -117,17 +124,19 @@ void end_redirect(char ch[100],int fd ,char *out_file,char type[10]);
 int parssing_red(char chainne[100],char *listArgsRed[100]);
 char* get_type (char symb[8],char before);
 int strcmp_red(char *str);
-int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int nb_red);
+int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int *nb_red);
 void end_all_redirect(int *fd1, int *fd2, int *fd3, char *out_file1,char *out_file2,char *out_file3, char *listArgsRed[100], int nb_red);
 //cp et mv
 void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file);
 int open_tar_file_rdwr(char ch[100]);
 int checkIfValide(char source[100], char destination[100]);
-int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD, posix_header *st);
-void cp_normal(char source[100], char destination[100]);
+int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD);
+int cp_normal(char source[100], char destination[100]);
 int cp_source_tar(char source[100], char destination[100]);
 int cp_destination_tar(char source[100], char destination[100]);
-void cp_source_destination_tar(char source[100], char destination[100]);
-void cp (char source[100], char destination[100]);
+int cp_source_destination_tar(char source[100], char destination[100]);
+int cp (char source[100], char destination[100]);
+void mv(char source[100], char destination[100]);
 void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]);
+char *recupere_nom(char *path);
 #endif //__OUR_SHELL_ZFI_INCLUDED__

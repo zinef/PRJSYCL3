@@ -117,7 +117,7 @@ Un Shell fait trois choses principales au cours de sa vie :
 | 6 | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarballs quand ils sont utilisés sans option ou avec l'option `-r` | Incorporé | Critique | Stable | 
 | 7 | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarballs quand il est utilisé sans option ou avec l'option `-l` | Incorporé | Critique | Stable | 
 | 8 | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarballs quand il est utilisé sans option| Incorporé | Critique | Stable | 
-| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Approuvé | Critique | Stable | 
+| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Incorporé | Critique | Stable | 
 | 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Incorporé |  Critique | Stable |  
 
 **État**  

@@ -38,19 +38,22 @@ int main(int argc,char **argv){
 		//Afficher le répértoire courant 
 		
 		my_pwd_global();
-		printf("%s",pwd_global);
+		write(1,ANSI_COLOR_CYAN,strlen(ANSI_COLOR_CYAN));
+		write(1,pwd_global,strlen(pwd_global));
+		write(1,ANSI_COLOR_RESET,strlen(ANSI_COLOR_RESET));
 		//récupérer l'entrée à partir de la ligne de commande 
 		int recup = recupEntry(entree) ;
 		if(strcmp(entree,"")!=0){
 			if((strstr(entree,">") != NULL) || (strstr(entree,"<") != NULL)){//detection des redirections
         			int nb_red = parssing_red(entree,listArgsRed);
     				int i=0;
-					int ret = start_all_redirect(&fd1, &fd2, &fd3, out_file1, out_file2 , out_file3, listArgsRed, nb_red);
+				if(start_all_redirect(&fd1, &fd2, &fd3, out_file1, out_file2 , out_file3, listArgsRed, &nb_red)){
     				
 						char *cmd=strtok(entree,"<>");
 						recupArgs(cmd,listeArgs);
 						executerCmdSimple(listeArgs);
-						end_all_redirect(&fd1, &fd2, &fd3, out_file1 , out_file2 , out_file3, listArgsRed, nb_red);
+				}
+				end_all_redirect(&fd1, &fd2, &fd3, out_file1 , out_file2 , out_file3, listArgsRed, nb_red);
 					
     		}else{
 					//Analyse de la commande 

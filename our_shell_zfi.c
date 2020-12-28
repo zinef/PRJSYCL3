@@ -10,16 +10,17 @@
 ***/
 
 void Initialiser_shell(){
-	printf("\033[H\033[J");
-	printf("\n***********************************\n");
-	printf("\n***********OUR SHELL ZFI***********\n");
+	write(1,ANSI_COLOR_CYAN,strlen(ANSI_COLOR_CYAN));
+	write(1,"\033[H\033[J",strlen("\033[H\033[J"));
+	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
+	write(1,"\n***********OUR SHELL ZFI***********\n",strlen("\n***********OUR SHELL ZFI***********\n"));
 	char *id=getenv("USER");
 	printf("\n \tBienvenu @%s \n",id);
-	printf("\n***********************************\n");
-	printf("\n***********************************\n");
+	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
+	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	sleep(1);
-	printf("\033[H\033[J");
-
+	write(1,"\033[H\033[J",strlen("\033[H\033[J"));
+	write(1,ANSI_COLOR_RESET,strlen(ANSI_COLOR_RESET));
 }
 
 /***
@@ -96,7 +97,7 @@ void executerCmdComplexe(char *cmd[]){
 ***/
 
 void executerCmdSimple(char *cmd[]){
-	//">"  ">>"  "<"  "2>"  "2>>"  "2>&1"  "2>>&1"
+	
 	
 	if(strcmp(cmd[0],"cd") == 0){
 		if((cmd[1] != NULL)&&(strcmp(cmd[1],"")!=0)){
@@ -112,15 +113,21 @@ void executerCmdSimple(char *cmd[]){
 			my_exit();
 		}else{
 			if(strcmp(cmd[0],"mkdir") == 0){
-				//TODO:loop for all directories to create
-				my_mkdir(cmd[1]);
+				for(int k=1;k<MAXARGs;k++){
+					if(cmd[k] != NULL){
+						my_mkdir(cmd[k]);
+					}
+				}
 			}else{
 				if(strcmp(cmd[0],"rmdir") == 0){
-					//TODO:loop for all directories to remove
-					my_rmdir(cmd[1]);
+					for(int k=1;k<MAXARGs;k++){
+						if(cmd[k] != NULL){
+							my_rmdir(cmd[k]);
+						}
+					}
 				}else{
 					if(strcmp(cmd[0],"pwd") == 0){
-						write(1,pwd_global,sizeof(pwd_global));
+						write(1,pwd_global,strlen(pwd_global));
 						write(1,"\n",sizeof("\n"));
 					}else{
 						if(strcmp(cmd[0],"rm") == 0){
@@ -154,7 +161,13 @@ void executerCmdSimple(char *cmd[]){
 											cp(cmd[1],cmd[2]);
 										}
 									}else{
-			
+										if(strcmp(cmd[0],"mv")==0){
+											if(cmd[1]!=NULL && cmd[2] != NULL){
+												mv(cmd[1],cmd[2]);
+											}
+										}else{
+										
+										}
 									}				
 								}
 							}
@@ -172,13 +185,7 @@ void executerCmdSimple(char *cmd[]){
 
 ***/
 char* my_pwd_global(){
-	if (in_tar){
-		//printf("Répertoire : %s \n",pwd_global);
 		return pwd_global;
-	}else{
-   		getcwd(pwd_global, sizeof(pwd_global)); 
-		return pwd_global;
-	}
 }
 /***
 	my_cd: la procedure qui permet de se déplacer dans un répértoire (un chemin qui n'inclus pas des tar)
@@ -198,7 +205,7 @@ void my_cd(char *path){
 				strcpy(tar_actuel,"");
 				in_tar=0;
 			}else{
-				write(1,"cd : No such directory\n",sizeof("cd : No such directory\n"));
+				write(1,"cd : No such directory\n",strlen("cd : No such directory\n"));
 			}
 		}else{
 			char pwd[1024];
@@ -207,14 +214,17 @@ void my_cd(char *path){
 			chemin=strcat(pwd,path);
 			flag=chdir(chemin);
 			if(flag == 0) {
-			
-				//chdir(pwd);
 				strcpy(pwd_global,"");
+				remove_points(chemin);
+    			remove_2points(chemin);
+    			if((strcmp(chemin,"/") != 0)&&(chemin[strlen(chemin)-1] == '/')){
+    				chemin[strlen(chemin)-1]='\0';
+    			}
 				strcpy(pwd_global,chemin);
 				strcpy(tar_actuel,"");
 				in_tar=0;
 			}else{
-				write(1,"cd : No such directory\n",sizeof("cd : No such directory\n"));
+				write(1,"cd : No such directory\n",strlen("cd : No such directory\n"));
 			}
 	}
 }
@@ -227,18 +237,18 @@ int deplacement_in_tar(char *path,int entete_a_lire){
 	//à modifier
 	int fd=open(tar_actuel,O_RDONLY);
 	if (fd<0){
-		write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
+		write(1,"No such file or directory\n",strlen("No such file or directory\n"));
 		return -1 ;
 	}
 	//seek
 	lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET);
 	//lecture et bufferisation du répértoire 
 	int size;
-	struct posix_header *st =malloc(sizeof(struct posix_header*));
+	struct posix_header *st =malloc(sizeof(struct posix_header));
 	char buf[513];
 	int n=read(fd,buf,BLOCKSIZE);
 	if (n<0){
-		write(1,"Erreur dans la lecture\n",sizeof("Erreur dans la lecture\n"));
+		write(1,"Erreur dans la lecture\n",strlen("Erreur dans la lecture\n"));
 		return -1 ;
 	}
 	st= (struct posix_header * ) buf;
@@ -246,7 +256,7 @@ int deplacement_in_tar(char *path,int entete_a_lire){
 	char *buf_rep=malloc(size);
 	n=read(fd,buf_rep,size);
 	if (n<0){
-		write(1,"Erreur dans la lecture\n",sizeof("Erreur dans la lecture\n"));
+		write(1,"Erreur dans la lecture\n",strlen("Erreur dans la lecture\n"));
 		return -1 ;
 	}
 	//free(buf_rep);
@@ -256,14 +266,14 @@ int deplacement_in_tar(char *path,int entete_a_lire){
 }
 /***
 	verif_exist_rep_in_tar: liste des fichiers et répértoire dans un fichier tar
-	
-
+	entrées : nom du fichier tar , chemin dans le tar , un entier pour retourner l'entete lu si c'est le cas 
+	sorties : entier
 ***/
 int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 	
 	int fd=open(nomfic,O_RDONLY);
 	if (fd<0){
-		write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
+		write(1,"No such file or directory\n",strlen("No such file or directory\n"));
 		return -1;
 	}
 	if (strcmp(path,"") == 0 ){//déplacement dans la racine d'un tar
@@ -276,11 +286,10 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 	int n=0;
 	int ret=0;
 	
-	struct posix_header *st =malloc(sizeof(struct posix_header*));
+	struct posix_header *st =malloc(sizeof(struct posix_header));
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
-		//printf("entete à lire = %d\n",EnteteAlire);
+
 		st= (struct posix_header * ) buf;
-		//printf("nom fichier = %s\n",st->name);
 		
 		if((st->name)[0] == '\0'){
 			stop=1;
@@ -290,7 +299,7 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 			*entete_lu=EnteteAlire;
 		}
 		sscanf(st->size,"%o",&size);
-		//printf("taille du fichier = %d\n",size);
+		
 		if(size==0){
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
 		}
@@ -301,13 +310,13 @@ int verif_exist_rep_in_tar(char *nomfic,char *path,int *entete_lu){
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
 	}
 	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
-		//printf("success\n");
+		
 		ret=1;
 	}
 
 	if (n<0){
-		perror("erreur dans la lecture");
-		exit(errno);
+		write(1,"zfi : No such file \n",strlen("zfi : No such file \n"));
+		return -1;
 	}
 	//free(st);
 	close(fd);
@@ -341,6 +350,7 @@ char *strrev(char *str) {
 int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 	int ret=0,i=0;
 	if(in_tar){
+		
 		if(startsWith("../",path)){
 			int n=countOccurrences(path,"../");
 			int i=0;
@@ -384,7 +394,7 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 				}
 				pwd_global[j+1]='\0';
 			}else{
-				write(1,"zfi : cd  :No such directory\n",sizeof("zfi : cd  :No such directory\n"));
+				write(1,"zfi : cd  :No such directory\n",strlen("zfi : cd  :No such directory\n"));
 			}
 		}
 	}else{
@@ -397,7 +407,7 @@ int verifier_exist_rep(char path[100],int *entete_lu,char chemin_absolu[100]){
 		strcat(chemin,path);
 		int flag=chdir(chemin);
 		if ((flag < 0 )&&(strstr(chemin,".tar/") == NULL)){
-			write(1,"zfi : cd  :No such directory\n",sizeof("zfi : cd  :No such directory\n"));
+			write(1,"zfi : cd  :No such directory\n",strlen("zfi : cd  :No such directory\n"));
 			return -1 ;
 		}
 		if(flag == 0) {
@@ -473,12 +483,9 @@ void my_cd_global(char *path){
 			my_cd(path);
 		}else{//totar
 			check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
-			
 		}
 	}else{
 		//chercher si path est un simple répértoire dans la hièrarchie du répértoire courant
-		
-		
 		int prev_in_tar=in_tar;
 		check_path=verifier_exist_rep(path,entete_lu,chemin_absolu);
 		char wd[1024];
@@ -519,8 +526,8 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 	
 	int fd=open(nomfic,O_RDONLY);
 	if (fd<0){
-		perror("erruer dans l'ouverture");
-		exit(errno);
+		write(1,"zfi : No such file \n",strlen("zfi : No such file \n"));
+		return -1 ;
 	}
 	char buf[513];
 	int EnteteAlire=0;
@@ -529,11 +536,10 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 	int n=0;
 	int ret=0;
 	
-	struct posix_header *st =malloc(sizeof(struct posix_header*));
+	struct posix_header *st =malloc(sizeof(struct posix_header));
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
-		//printf("entete à lire = %d\n",EnteteAlire);
+		
 		st= (struct posix_header * ) buf;
-		//printf("nom fichier = %s\n",st->name);
 		
 		if((st->name)[0] == '\0'){
 			stop=1;
@@ -547,7 +553,7 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 			*entete_lu=EnteteAlire;
 		}
 		sscanf(st->size,"%o",&size);
-		//printf("taille du fichier = %d\n",size);
+		
 		*entete_lu=EnteteAlire;
 		if(size==0){
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
@@ -559,13 +565,13 @@ int verif_exist_rep_in_tar_for_mkdir(char *nomfic,char *path,int *entete_lu,int 
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
 	}
 	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '5')){
-		//printf("success\n");
+		
 		ret=1;
 	}
 
 	if (n<0){
-		perror("erreur dans la lecture");
-		exit(errno);
+		write(1,"zfi : No such file \n",strlen("zfi : No such file \n"));
+		return -1 ;
 	}
 	//free(st);
 	close(fd);
@@ -613,8 +619,8 @@ int my_mkdir(char *nom_rep){
 		*trouve=0;
 		int ret=verif_exist_rep_in_tar_for_mkdir(tar_file,tmp,entete_lu,entete_a_modifier,trouve); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
 		if(ret>0){
-			perror("Le répértoire existe déjà");
-			exit(EXIT_FAILURE);
+			write(1,"zfi :mkdir : cannot create directory ,The file exists \n",strlen("zfi :mkdir : cannot create directory ,The file exists \n"));
+			return -1 ;
 		}
 		char buf[513]="";
 		time_t t;
@@ -624,14 +630,14 @@ int my_mkdir(char *nom_rep){
 		//on doit écrire à l'entete entete_a_modifier si trouve est vrai i.e. trouve=1
 		//sinon on ajoute à la fin du fichier à l'entete entete_lu qui pointe vers la fin du fichier si le répértoire n'existe pas 
 		int fd=open(tar_file,O_RDWR);
-		struct posix_header *st =malloc(sizeof(struct posix_header*));
+		struct posix_header *st =malloc(sizeof(struct posix_header));
 		if(*trouve){//on modifie le bloc entete_a_modifier en remplacant ses caractéristiques par le nouveau rép qu'on veut créer 
 			
 			lseek(fd,*entete_a_modifier*BLOCKSIZE,SEEK_SET);
 			int n=read(fd,buf,BLOCKSIZE);
 			if (n<0){
-				perror("erreur dans la lecture");
-				exit(EXIT_FAILURE);
+				write(1,"zfi :mkdir : No such file\n",strlen("zfi :mkdir : No such file\n"));
+				return -1 ;
 			}
 			//struct passwd *pw = getpwuid(getuid());
             //struct group  *gr = getgrgid(getgid());
@@ -672,8 +678,8 @@ int my_mkdir(char *nom_rep){
 			set_checksum(st);
 			int w=write(fd,st,sizeof(struct posix_header));
 			if(w<0){
-				perror("err dans l'écriture");
-				exit(EXIT_FAILURE);
+				write(1,"zfi :mkdir : Writing error\n",strlen("zfi :mkdir : Writing error\n"));
+				return -1 ;
 			}
 			
 		}
@@ -684,11 +690,12 @@ int my_mkdir(char *nom_rep){
 		close(fd);
 	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
 		//utilisation de la fonction mkdir 
-		struct stat *st =malloc(sizeof(struct stat*));
+		struct stat *st =malloc(sizeof(struct stat));
 		if(stat(tmp,st) == -1){
 			mkdir(tmp,0700);
 		}else{
-			perror("le répértoire existe déjà");
+			write(1,"zfi :mkdir : cannot create directory ,The file exists \n",strlen("zfi :mkdir : cannot create directory ,The file exists \n"));
+			return -1 ;
 		}
 		//free(st);
 	}	
@@ -702,8 +709,8 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 	
 	int fd=open(nomfic,O_RDONLY);
 	if (fd<0){
-		perror("erruer dans l'ouverture");
-		exit(errno);
+			write(1,"zfi :rmdir : No such file \n",strlen("zfi :rmdir : No such file \n"));
+			return -1 ;
 	}
 	char buf[513];
 	int EnteteAlire=0;
@@ -712,7 +719,7 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 	int n=0;
 	int ret=0;
 	
-	struct posix_header *st =malloc(sizeof(struct posix_header*));
+	struct posix_header *st =malloc(sizeof(struct posix_header));
 
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
 		//printf("entete à lire = %d\n",EnteteAlire);
@@ -742,8 +749,8 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
 	}
 	if (n<0){
-		perror("erreur dans la lecture");
-		exit(errno);
+		write(1,"zfi :rmdir : Writing error \n",strlen("zfi :rmdir : Writing error \n"));
+			return -1 ;
 	}
 	close(fd);
 	//free(st);
@@ -753,7 +760,7 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 /***
   	my_rmdir : la fonction avec laquelle on suprime des répértoires (vides)  
 
-  	entrées:nom des répértoire à supprimer
+  	entrées:nom des répértoires à supprimer
 
 	sorties: booléen
 
@@ -793,23 +800,23 @@ int my_rmdir(char *nom_rep){
 		*cpt=0;
 		int ret=verif_exist_rep_in_tar_for_rmdir(tar_file,tmp,entete_lu,cpt); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
 		if(ret==0){
-			perror("Le répértoire n'existe pas\n");
-			exit(EXIT_FAILURE);
+			write(1,"zfi : No such directory\n",strlen("zfi : No such directory\n"));
+			return -1; 
 		}
 		if(*cpt>1){
-			perror("Le répértoire n'est pas vide\n");
-			exit(EXIT_FAILURE);
+			write(1,"zfi : rmdir : Not empty directory\n",strlen("zfi : rmdir : Not empty directory\n"));
+			return -1;
 		}
 		//le répértoire existe on verifie si le répértoire est vide , si c'est le cas on le supprime
 		
 		int fd=open(tar_file,O_RDWR);
-		struct posix_header *st =malloc(sizeof(struct posix_header*));
+		struct posix_header *st =malloc(sizeof(struct posix_header));
 		lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
 		char buf[513]="";
 		int n=read(fd,buf,BLOCKSIZE);
 		if (n<0){
-			perror("erreur dans la lecture\n");
-			exit(EXIT_FAILURE);
+			write(1,"zfi : No such file\n",strlen("zfi : No such file\n"));
+			return -1;
 		}
 			
 		st=(struct posix_header * ) buf;
@@ -823,11 +830,12 @@ int my_rmdir(char *nom_rep){
 		close(fd);
 	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
 		//utilisation de la fonction mkdir 
-		struct stat *st =malloc(sizeof(struct stat*));
+		struct stat *st =malloc(sizeof(struct stat));
 		if(stat(tmp,st) == 0){
 			rmdir(tmp);
 		}else{
-			perror("le répértoire n'existe pas");
+			write(1,"zfi : No such directory\n",strlen("zfi : No such directory\n"));
+			return -1;
 		}
 	}	
 }
@@ -876,10 +884,12 @@ void recupArgs(char *entree,char **listeArgs){
 	while(indiceArg<MAXARGs && stop == 0){
 		listeArgs[indiceArg] = strsep(&entree," ");
 		if(listeArgs[indiceArg] == NULL ) stop=1;
-		//if(strlen(listeArgs[indiceArg]) == 0) indiceArg -=1;
+		if(listeArgs[indiceArg] != NULL ){
+			if(strlen(listeArgs[indiceArg]) == 0)
+				 indiceArg -=1;
+		}
 		indiceArg++;
 	}
-	
 }
 
 
@@ -1063,56 +1073,90 @@ void seek_next_entete (int fd ,struct posix_header *header)
 
 
 
-int rm_in_tar(int fd,char file_name[100])
+int rm_in_tar(int fd,char file_name[100],char chaine[100])
 {
-	char buf[513];
+	char buf[512];
 	int EnteteAlire=0;
 	int stop=0;
 	int size=0;
 	int n=0;
 	int ret=0;
 	int entete_a_lire;
-	struct posix_header *st =malloc(sizeof(struct posix_header*));
-	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+    char type ,nameToTest[100];
+
+	while((stop==0)&&((n=read(fd,Buffer,BLOCKSIZE))>0)){
 		
-                st= (struct posix_header *) buf;
+         get_entete_info (st,Buffer);
 		// on teste si on est pas arrivé à la fin 
-                if((st->name)[0] == '\0'){
-			stop=1;
+        if((st->name)[0] == '\0'){
+		    stop=1;
 		}
+
 		if (strcmp(st->name,file_name)==0){
-			stop=1;
-			entete_a_lire=EnteteAlire;
+			stop = 1;
+			entete_a_lire = EnteteAlire;
 		}
+
 		// on récupère la taille di fichier 
-                sscanf(st->size,"%o",&size);
+        sscanf(st->size,"%o",&size);
 		if(size==0){
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);// >>BLOCKBITS = /512
 		}
 		else{
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1; 
 		}
-
 		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+        
+        type = st->typeflag;
+
+        strcpy(nameToTest,st->name); 
+        free(st);
+        st = malloc(sizeof(posix_header));
 	}
+    free(st);
+    
+
+    if ( type != '0'){
+        write(STDERR_FILENO,"rm : ",5 );
+        write(STDERR_FILENO,chaine,strlen(chaine));
+		write(1," : No such file\n",strlen(" : No such file\n"));
+		return -1 ;
+	}else if(nameToTest[0] == '\0' || n <= 0 ){
+        write(STDERR_FILENO,"rm : ",5 );
+        write(STDERR_FILENO,chaine,strlen(chaine));
+		write(1," : No such file or directory\n",29);
+        return -1;
+    }
+
+
      // on teste les conditions de sortie 
-	if((stop==1)&&((st->name)[0] != '\0')&&(st->typeflag == '0')){ // on est au bon fichier 
+	if((stop==1)&&((nameToTest)[0] != '\0')){ // on est au bon fichier 
 		lseek(fd,0,SEEK_SET); // on se repositionne au debut
 		
-		struct posix_header *st =malloc(sizeof(struct posix_header*));
+		struct posix_header *st1 =malloc(sizeof(struct posix_header));
 		lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET); //on va directement a lentete concernée 
-		char buf[513]="";
-		int n=read(fd,buf,BLOCKSIZE);
-		if (n<0){
-			write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
+		
+		n = read(fd,Buffer,BLOCKSIZE);
+
+		if (n <= 0){
+			write(STDERR_FILENO,"rm : ",5 );
+            write(STDERR_FILENO,chaine,strlen(chaine));
+		    write(STDERR_FILENO," : No such file or directory\n",29);
+            free(st1);
 			return -1;
 		}
 			
-		st=(struct posix_header * ) buf;
-		st->name[0]='#'; //supprimer logiquement le repértoire
-		set_checksum(st);
+		get_entete_info( st1,Buffer);
+        if(strstr(st1->name,"/")!=NULL){
+            int file_name_len = strlen(recupere_nom(st1->name));
+            st1->name[strlen(st1->name)-file_name_len]='#';
+        }else{
+		    st1->name[0]='#'; 
+        }
+		set_checksum(st1);
 		lseek(fd,entete_a_lire*BLOCKSIZE,SEEK_SET);
-		write(fd,st,sizeof(struct posix_header));
+		write(fd,st1,sizeof(struct posix_header));
 		
 		//Une suppresion logique 
 		//une boucle pour supprimer logiquement (i.e mettre le début des blocs concernés par le fichier à "#" )
@@ -1121,74 +1165,66 @@ int rm_in_tar(int fd,char file_name[100])
 			write(fd,"#",1);
 			block--;  /* supprimer les blocks logiquement */
 		}
-		//free(st);
+		free(st1);
 	}
-	if (n<0){
-		write(1,"Erreur dans la lecture \n",sizeof("Erreur dans la lecture \n"));
-		return -1 ;
-	}
-	//free(st);
+
+    
+    return 1;
 }
 
 
 
 int rm(char chaine[100]) {
-    int delete, reussi, fd, i;
-    int erreur = 0;
-    char str[100], nom[100];
-	struct stat *buf=malloc(sizeof(buf));
-    strcpy(str, chaine);
-    if (in_tar == 0) {
-        if (strstr(str, ".tar/") == NULL) { // Fonctionnement normal de rm
-			
-			int ret=stat(chaine,buf);
-			if(ret < 0){
-				write(1,"zfi : rm : No such file\n",sizeof( "zfi : rm : No such file\n"));
-				return -1;
-			}
-			if((buf->st_mode & S_IFMT) == S_IFREG){
-            	remove(chaine);
-			}else{
-				write(1,"zfi : rm : Not a regular file , Try rm -r \n",sizeof("zfi : rm : Not a regular file , Try rm -r \n"));
-				return -1;
-			}  
-			
-        } // Fin du fonctionnement normal de rm
-        else {
-            fd = open_tar_file(str);
-            if (fd < 0){ // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
-            
-                write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
-				return -1; 
-            }
-            // si le chemin vers le tarball existe et que ce dernier est bien ouvert
-            // on recupere le chemin jusqu'au tar et on recupere la suite du chemin dans une autre chaine
-            i = strlen(strstr(chaine, ".tar/"));
-            strncpy(str, & chaine[strlen(chaine) - i + 5], i);
-            rm_in_tar(fd, str);
-            close(fd);
-        }
-    } else { // on est dans un tarball 
-        char tmp[1024] = "";
-        strcpy(tmp, pwd_global);
-        strcat(tmp, chaine);
-        fd = open_tar_file(tmp);
-        if (fd < 0) // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
-        {
+    int fd, i;
+    char str[100], ch_in_tar[100];
+	
 
-            write(1,"No such file or directory\n",sizeof("No such file or directory\n"));
-			return -1; 
+    strcpy(str, chaine);
+
+    get_ch_absolu(str);
+    remove_points(str);
+    remove_2points(str);
+
+    if (strstr(str, ".tar/") == NULL) { // Fonctionnement normal de rm
+
+        struct stat st;
+		int ret=stat(str,&st);
+		if(ret < 0){
+            write(STDERR_FILENO,"rm : ",5 );
+            write(STDERR_FILENO,chaine,strlen(chaine));
+			write(1," : No such file\n",16);
+            
+			return -1;
+		}
+		if((st.st_mode & S_IFMT) == S_IFREG){
+        	remove(str);
+            return 1;
+		}else{
+            write(STDERR_FILENO,"rm : ",5 );
+            write(STDERR_FILENO,chaine,strlen(chaine));
+			write(1," : Not a regular file , Try rm -r\n",34);
+			return -1;
+		}  
+			
+    } // Fin du fonctionnement normal de rm
+    else {
+        fd = open_tar_file_rdwr(str);
+        if (fd < 0){ // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
+            write(STDERR_FILENO,"rm : ",5 );
+            write(STDERR_FILENO,chaine,strlen(chaine));
+			write(1," : No such file or directory\n",29);
+			return -1;
         }
         // si le chemin vers le tarball existe et que ce dernier est bien ouvert
         // on recupere le chemin jusqu'au tar et on recupere la suite du chemin dans une autre chaine
-        i = strlen(strstr(tmp, ".tar/"));
-		strcpy(str,"");
-        strncpy(str, & tmp[strlen(tmp) - i + 5], i);
-        rm_in_tar(fd, str);
+        i = strlen(strstr(str, ".tar/"));
+        strncpy(ch_in_tar, & str[strlen(str) - i + 5], i);
+        rm_in_tar(fd, ch_in_tar, chaine );
         close(fd);
-
     }
-	//free(buf);
+    
+    return 1;
+	
 }
 
 /***
@@ -1393,35 +1429,42 @@ void remove_points(char *ch){
 	sorties : void
 ***/
 void remove_2points(char *ch){
-     /// "ch" ne contient pas de "/." on change rien 
-    if(strstr(ch,"..") == NULL){
-        return;
-    }
+     /// "ch" ne contien pas de "/." on change rien 
+    char copy[100];
+    strcpy(copy,ch);
+    int i = 0;
+    while (strstr(copy,"..") != NULL && i++<10){
 
     /// on assure que le chemin fini par "/"
-    if(ch[strlen(ch)-1]!='/'){
-        ch[strlen(ch)+1]='\0';
-        ch[strlen(ch)]='/';
-    } 
+        if(copy[strlen(copy)-1]!='/'){
+            copy[strlen(copy)+1]='\0';
+            copy[strlen(copy)]='/';
+        } 
 
-    char str[100] , *ch1, ch2[100];
-    strcpy(str,ch);
-    ch[0]='\0';
-    ch1 = strtok(str,"/");
+        char str[100] , *ch1, ch2[100];
+        strcpy(str,copy);
+        ch[0]='\0';
+        ch1 = strtok(str,"/");
     /// on va suprimer tout les ".." et la chainne qui precede, et maitre le resultat dans "ch"
-    while (1){
-        strcpy(ch2,ch1);
-        ch1 = strtok (NULL, "/");
-        if(ch1 == NULL){break;}
-        if( strcmp(ch1,"..") != 0 && strcmp(ch2,"..") !=0 ){
-            strcat(ch,"/");
-            strcat(ch ,ch2);
+        while (1){
+            strcpy(ch2,ch1);
+            ch1 = strtok (NULL, "/");
+            if(ch1 == NULL){break;}
+            if( strcmp(ch1,"..") != 0 && strcmp(ch2,"..") !=0 ){
+                strcat(ch,"/");
+                strcat(ch ,ch2);
+            }else if( strcmp(ch1,"..") == 0 && strcmp(ch2,"..") ==0 ){
+                strcat(ch,"/");
+                strcat(ch ,ch2);
+            }
         }
+        strcat(ch,"/");
+        if(strcmp(ch2,"..")!=0)strcat(ch ,ch2);
+        strcpy(copy,ch);
     }
-    strcat(ch,"/");
-    if(strcmp(ch2,"..")!=0)strcat(ch ,ch2);
-    
 }
+
+
 //ls
 /***
 	check_dir : cette fonction permet de verifier si le répértoire "dir_name" contient le fihier nommé "header_name"
@@ -1461,9 +1504,9 @@ int check_dir(char header_name[100],char dir_name[100]){
 	sorties : entier
 ***/
 int get_dir(int fd,char dir_name[100], posix_header *header){
-    int i , cpt = 0;
-    read(fd,Buffer,BLOCKSIZE);cpt++;
-    while (Buffer[0]!='\0' && Buffer[0]!=EOF)
+    int i , cpt = 0,nb_read=1;
+    nb_read=read(fd,Buffer,BLOCKSIZE);cpt++;
+    while (Buffer[0]!='\0' && Buffer[0]!=EOF && nb_read)
     {   
         get_entete_info(header, Buffer);        
         if(cmp_name(header->name,dir_name) == 0){
@@ -1473,7 +1516,7 @@ int get_dir(int fd,char dir_name[100], posix_header *header){
             header = malloc(sizeof(posix_header));                
             i = get_file_size(header);
             seek_next_entete(fd,header);cpt+=i;
-            read(fd,Buffer,BLOCKSIZE);cpt++;
+            nb_read=read(fd,Buffer,BLOCKSIZE);cpt++;
         }
     }
     free(header);
@@ -1517,6 +1560,7 @@ void write_in_tar(posix_header *header,int option){
         strncpy(name,&header->name[strlen(header->name) - i + 1],i-1);
         name[i-1] = '\0';
     }
+	if(name[0] == '#'){return;} 
     char linkstr[100]="";
     if(option == 1 || option == 3 ){
         struct stat st;
@@ -1619,7 +1663,7 @@ void write_out_tar(char file_name[100],char dir_name[100],int option){
                 readlink(str1,linkstr,100);
             }   
         }else{
-            perror(str1);
+            //perror(str1);
             return;
         }
        
@@ -1632,7 +1676,7 @@ void write_out_tar(char file_name[100],char dir_name[100],int option){
         write(STDOUT_FILENO,str,10);
         write(STDOUT_FILENO," ",1);
 
-            sprintf(str,"%2u",st.st_nlink);
+            sprintf(str,"%2lu",st.st_nlink);
         write(STDOUT_FILENO,str,2);
         write(STDOUT_FILENO,"  ",2);
 
@@ -1904,7 +1948,7 @@ int search(char ch[100]){
     int fd = open_tar_file_read(ch);
     int i;
     if( fd <= 0 ){
-        perror(ch);
+        write(1,"zfi : No such file \n",strlen("zfi : No such file \n"));
         return -1;
     }
     char str[100];
@@ -1948,7 +1992,15 @@ void end_redct(char ch[100],int fd,char *out_file,int type){
     }
     
     if(strlen(out_file)==0){return;}
-    //cp(out_file,ch);
+
+    //////here
+    char str[100];
+    strcpy(str,ch);
+    char ch_in_tar[100];
+    strcpy(ch_in_tar,str);
+    ch_in_tar[strlen(ch_in_tar)-strlen(recupere_nom(ch_in_tar))]='\0';
+    cp(out_file,ch_in_tar);
+    out_file="";
 
 }
 /***
@@ -1963,39 +2015,57 @@ int redercet_stdout(char ch[100],char *out_file,int type){
     char str[100],str2[100],str3[100];
     struct stat sb;
     int fd,res,i;
+            
 
     strcpy(str,ch);
     get_ch_absolu(str);
     remove_points(str);
     remove_2points(str);
 
+
     if(strstr(str,".tar")!=NULL){
-            
+        
         res = search(str);
         if( res == -1 ){
+            write(STDERR_FILENO,ch,strlen(ch));
+            write(STDERR_FILENO,": No such file or directory\n",28);
             return 0;
         }
-
-        strcpy(str3,"/tmp");
-        i = strlen(strstr(str,".tar/"));
-        strncpy(str2 , &str[strlen(str) - i + 5] , i);
-
-        strcat(str3,str2);
-        strcpy(out_file,str3);
+        
+        if( res == 0){
             
-        if (res == 1){
+                int alpha = strlen(strstr(str,".tar/"))-5;
+                char ch_in_tar[100];
+                strcpy(ch_in_tar,str);
+                ch_in_tar[strlen(ch_in_tar)-strlen(recupere_nom(ch_in_tar))]='\0';
 
-            if( type == 2 || type == 4 || type == 6){
-                //cp(ch,str3);
-            }
-            //rm(ch)
+                if((strlen(strstr(ch_in_tar,".tar"))>5) && search(ch_in_tar) != 1){
+                    write(STDERR_FILENO,ch,strlen(ch));
+                    write(STDERR_FILENO,": No such file or directory\n",28);
+                    return 0;
+                }
+                
         }
 
+        strcpy(str3,"/tmp/");
+        
+        if (res == 1){
+            if( type == 2 || type == 4 || type == 6){
+                cp(ch,str3);
+            }
+            rm(ch);
+        }
+        
+        strcat(str3,recupere_nom(str));
+        strcpy(out_file,str3);
+    
     }else{
+            
         strcpy(str3,str);
         out_file[0]='\0';
     }
 
+         
     if( type == 1 || type == 3 || type == 5){
         fd = open(str3,O_TRUNC );
         if( fd > 0 ){ close(fd); }
@@ -2037,7 +2107,7 @@ int redercet_stdin(char ch[100]){
     char str[100],str2[100],str3[100];
     struct stat sb;
     int fd,res,i;
-
+ 
     strcpy(str,ch);
     get_ch_absolu(str);
     remove_points(str);
@@ -2045,33 +2115,36 @@ int redercet_stdin(char ch[100]){
 
     ///dans le cas ou le chemin inclue des tar
     if(strstr(str,".tar")!=NULL){
-            
+             
         res = search(str);
         if( res == -1 || res == 0){
+            write(STDERR_FILENO,ch,strlen(ch));
+            write(STDERR_FILENO,": No such file or directory\n",28);
             return 0;
         }
 
-        strcpy(str3,"/tmp");
+        strcpy(str3,"/tmp/");
         i = strlen(strstr(str,".tar/"));
         strncpy(str2 , &str[strlen(str) - i + 5] , i);
+        
+        cp(str,str3);
 
-        strcat(str3,str2);
-
-        //cp(ch,str3);
+        strcat(str3,recupere_nom(ch));
 
     /// si le chemin n'inclue pas des tar
     }else{
         strcpy(str3,str);
     }
 
-    
+   
     fd = open(str3,O_RDONLY);
 
     if(fd <= 0 ){ 
-        perror(ch); 
+        write(STDERR_FILENO,ch,strlen(ch));
+        write(STDERR_FILENO,": No such file or directory\n",28);
         return 0; 
     }
-
+    
     dup2( fd , STDIN_FILENO );
     return fd;
 }
@@ -2101,6 +2174,7 @@ int redirect_res(char ch[100],char *out_file,char type[10]){
         return redercet_stdout( ch , out_file , 6);
     }
     if ( strcmp( type , "<" ) == 0 ){
+    	out_file = "";
         return redercet_stdin( ch );
     }
 
@@ -2230,51 +2304,56 @@ int strcmp_red(char *str){
 	entrées:path , descripteurs de fichiers ,fichiers pour redirections , liste arguments commande redirection , nombre de redirections
 	sorties:int 
 ***/
-int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int nb_red){
+int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int *nb_red){ 
     int i = 0;
     char copy1[100],copy2[10];
-    if(nb_red > 0){
+    if(*nb_red > 0){
         strcpy(copy1,listArgsRed[i]);
         while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
         if( listArgsRed[i+1] != NULL ){
             strcpy(copy2,copy1);
             strcpy(copy1,listArgsRed[i+1]);
             if((*fd1 = redirect_res(copy1 ,out_file1 , copy2))<=0){
+                write(STDERR_FILENO,copy1,strlen(copy1)); ///// a ajouter
+                write(STDERR_FILENO,":  No such file or directory\n",29);//// a ajouter
+                *nb_red = 0;//// a ajouter
                 return 0;
             }
         }
-    }      
-    
+    }
     i++;
-    if(nb_red > 1){
+    if(*nb_red > 1){
         strcpy(copy1,listArgsRed[i]);
-        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
-
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);
         if( listArgsRed[i+1] != NULL ){
             strcpy(copy2,copy1);
             strcpy(copy1,listArgsRed[i+1]);
             if((*fd2 = redirect_res(copy1 ,out_file2 , copy2))<=0){
+                write(STDERR_FILENO,copy1,strlen(copy1));//// a ajouter
+                write(STDERR_FILENO,":  No such file or directory\n",29);/// a ajouter
+                *nb_red = 1;  /// a ajouter
                 return 0;
             }
         }
     }      
-    
     i++;
-    if(nb_red > 2){
+    if(*nb_red > 2){
         strcpy(copy1,listArgsRed[i]);
         while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
-
         if( listArgsRed[i+1] != NULL ){
             strcpy(copy2,copy1);
             strcpy(copy1,listArgsRed[i+1]);
             if((*fd3 = redirect_res(copy1 ,out_file3 , copy2))<=0){
+                write(STDERR_FILENO,copy1,strlen(copy1));
+                write(STDERR_FILENO,":  No such file or directory\n",29);
+                *nb_red = 2;
                 return 0;
-            }
-        }
+      }
+    }
     }      
     return 1;
+	}
 }
-
 /***
 	end_all_redirect : fonction pour terminer les redirections 
 	entrées:descripteurs , fichiers de redirection , liste des arguments de la commande en question , nombre de redirections
@@ -2351,18 +2430,26 @@ void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_fi
     
     while( read(fd,Buffer,BLOCKSIZE)){
 		
-        st = (struct posix_header *) Buffer;
+        get_entete_info(st, Buffer);
 		// on teste si on est pas arrivé à la fin 
         if((st->name)[0] == '\0'){
+                
                 lseek(fd,-BLOCKSIZE,SEEK_CUR);
                 *entete = EnteteAlire; //sauvegarde derniere entete destination        
                 *trouv=0;//// on a rien trouver
+                free(st);
                 return;
 		}
-        sscanf(st->size,"%o",&*size_file);
-		if (strcmp(st->name, nomfic)==0){        
+
+        
+		if (strcmp(st->name, nomfic)==0){
+
+            sscanf(st->size,"%o",&size);
+            
+            *size_file = size;        
 			*entete=EnteteAlire;
 			*trouv= 1;//// on a trouver unn fichoer ab=vec le meme nom
+            free(st);
             return;
 		}
        
@@ -2398,11 +2485,17 @@ int open_tar_file_rdwr(char ch[100]){
 ***/
 int checkIfValide(char source[100], char destination[100]){
     //1-on verifie qu'on a recu deux arguments 
-    if(source== NULL || destination==NULL ){
-        printf("\nSyntaxe erreur: cp source_du_fichier destination_du_fichier\n");
-        printf("Erreur dans les paramètres\n");
+   
+
+    if(source == NULL){
+        write(STDERR_FILENO,"cp : missing file operand\n",26);
         return 0;
-    } 
+    }else if (destination == NULL){
+        write(STDERR_FILENO,"cp : missing destination file operand after '",45);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"'\n",2);
+        return 0;
+    }
 
     //2- on vérifie si la source= destination le fichier ne sera pas copier comme  on aura juste une duplication. 
     char str[100];
@@ -2411,60 +2504,50 @@ int checkIfValide(char source[100], char destination[100]){
         strncpy(str,source,strlen(destination));
 
         if(strcmp(str,destination) == 0){
-            printf( "le fichier %s existe déja à la destination \n",source);
+            write(STDERR_FILENO,"cp : ",5);
+            write(STDERR_FILENO,source,strlen(source));
+            write(STDERR_FILENO,"' and '",7);
+            write(STDERR_FILENO,str,strlen(str));
+            write(STDERR_FILENO,"' are in the same file\n",23);
+            
             return 0;
         }
     }
 
-    str[0]='\0';
- 
-    strcpy(str, destination);
-    strcat(str,recupere_nom(source));
-
-    if((strcmp(source,destination)==0) || (open(str,O_RDONLY))!=-1)
-    {
-        printf( "le fichier %s existe déja à la destination \n",str);
-        return 0;
-    }
     return 1;
 
 }
+
 /***
 	posix_to_buffer : fonction pour ecrire les carcatéristiques d'une entête posix_header 
 ***/
-int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD, posix_header *st){
+int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD){
+
+    posix_header *header = malloc(sizeof( posix_header));
     //récupération des caractéristiques du fichier source
-    struct stat * statbuf = malloc(sizeof(struct stat * ));
-   
-    if ( fstat(fdS, statbuf) < 0) {
-        printf("error");
+    struct stat  statbuf ;
+    struct tm *dt;
+    char str[100];
+
+    if ( fstat(fdS, &statbuf) < 0) {
+        write(1,"zfi : No such file \n",strlen("zfi : No such file \n"));
         return 0;
     }
-
-     //création de l'entête du fichier à ajouter 
     
-    char * uid = getenv("USER");
-    (st) = (posix_header *) Buffer;
-
-    strcpy(st -> name, ch_in_tar);
-    sprintf(st -> size, "%o",(int) statbuf -> st_size);
-    st -> typeflag = '0';
-    sprintf(st -> mode, "0000700");
-    //time(&t);
-    //sprintf(st->mtime, "%ld",t);
-    sprintf(st -> uid, "%d", getuid());
-    sprintf(st -> gid, "%d", getuid());
-    strcpy(st -> uname, uid);
-    strcpy(st -> gname, uid);
-    strcpy(st -> magic, TMAGIC);
-    strcpy(st -> version, TVERSION);
-    set_checksum(st);
+    
+    strcpy(header -> name, ch_in_tar);
+    header -> typeflag = '0';
+    sprintf(header -> size ,"%lo" ,statbuf.st_size);
+    sprintf(header -> mode ,"%o" ,statbuf.st_mode);
+    sprintf(header -> mtime,"%lo",statbuf.st_mtime);
+    sprintf(header -> uid  ,"%o" ,statbuf.st_uid);
+    sprintf(header -> gid  ,"%o" ,statbuf.st_gid);
+    strcpy(header -> magic, TMAGIC);
+    strcpy(header -> version, TVERSION);
+    set_checksum(header);
 
     //écriture de l'entete
-    if (write(fdD, st, BLOCKSIZE) < 0) {
-        perror("\n Erreur dans la copie veuillez réesayer\n");
-        return 0;
-    }
+    write(fdD, header, BLOCKSIZE) ;
 
     return 1;
 }
@@ -2495,16 +2578,24 @@ int cp_destination_tar(char source[100], char destination[100]) {
     }
 
 
-    // 1.2- source comporte pas tar --> destination  tar
 
     //2-  on essaie d'ouvrir le tar de destination pour savoir s'il existe 
-    int fdS, fdD, errno, nbread, nbtotal = 0;
+    int fdS, fdD, nbtotal = 0;
 
+    fdS = open(sourceAbs, O_RDONLY);
+    if (fdS < 0) {
+        write(STDERR_FILENO,"cp : cannot stat '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"': No such file or directory\n",29);
+        return 0;
+    }
 
     fdD = open_tar_file_rdwr(destinationAbs);
     if (fdD < 0) {
         // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
-        printf("le chemin destination que vous avez introduit n'est pas    valide -> %s\n",destinationAbs);
+        write(STDERR_FILENO,"cp: cannot create regular file '",32);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"': Permission denied\n",21);
         return 0;
     }
     //  dans ce cas le tarball est bien ouvert <=> il existe et le chemin est correcte  
@@ -2518,7 +2609,6 @@ int cp_destination_tar(char source[100], char destination[100]) {
 
     //2- on récupere le nom du fichier dans la source
    
-    strcat(ch_in_tar, recupere_nom(sourceAbs));
 
     // maintenant dans nom fic, on a le chemin apartir du tar vers le fichier a copier 
 
@@ -2526,37 +2616,59 @@ int cp_destination_tar(char source[100], char destination[100]) {
     int trouv = 0, entete = 0, size1 = 0;
     recherche_tar(fdD, ch_in_tar, & trouv, & entete, & size1);
 
-    if (trouv == 1) {
-        printf("\n le fichier %s existe déja à la destination \n", source);
+    if (trouv == 0 && strlen(ch_in_tar)>1) {
+        close(fdD);
+        write(STDERR_FILENO,"cp: cannot create regular file '",32);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"': Permission denied\n",21);
         return 0;
     }
+    
+    strncpy(ch_in_tar,&destinationAbs[strlen(destinationAbs)-i+5],i);
+    strcat(ch_in_tar, recupere_nom(sourceAbs));
+
+    trouv = 0; entete = 0; size1 = 0; 
+    lseek(fdD,0,SEEK_SET);
+    recherche_tar(fdD, ch_in_tar, & trouv, & entete, & size1);
+    //write(1,ch_in_tar,strlen(ch_in_tar));
+    if(trouv == 1){
+        char str[100];
+        strcpy(str,destinationAbs);
+        strcat(str,recupere_nom(sourceAbs));
+        close(fdD);
         
-    fdS = open(source, O_RDONLY);
-    if (fdS < 0) {
-            printf("\nVotre chemin n'est pas valide, veuillez réessayer ! \n");
+        rm(str);
+        fdD = open_tar_file_rdwr(destinationAbs);
+        trouv = 0; entete = 0; size1 = 0; 
+        recherche_tar(fdD, ch_in_tar, & trouv, & entete, & size1);
+        if(trouv == 1){
             return 0;
+        }
     }
-
-    posix_header *st = malloc(sizeof( posix_header ));;
-    if(posix_to_buffer(ch_in_tar, fdS, fdD, st ) == 0){
+    
+    
+    if(posix_to_buffer(ch_in_tar, fdS, fdD ) == 0){
+        
         return 0;
     }
 
-    int nblus;
-    while (nblus = read(fdS, Buffer, BLOCKSIZE)) {
-        write(fdD, Buffer, nblus);
+    
+    int nb_read;
+    while (nb_read = read(fdS, Buffer, BLOCKSIZE)) {
+        write(fdD, Buffer, nb_read);
     }
     close(fdS);
     close(fdD);
     return 1;
 }
+
 /***
 	cp_source_destination_tar : une partie de la fonction cp (qui traite la copie dans le cas ou la source et la destination est un tarball)
 	entrées: source et destination 
 	sorties: int 
 ***/
 
-void cp_source_destination_tar(char source[100], char destination[100]) {
+int cp_source_destination_tar(char source[100], char destination[100]) {
 
     char fake_distination[100]="/tmp";
 
@@ -2565,13 +2677,17 @@ void cp_source_destination_tar(char source[100], char destination[100]) {
         strcat(fake_distination,"/");                   ////  "/tmp/"
         strcat(fake_distination,recupere_nom(source));  ////  "/tmp/nom_fichier"
 
-        cp_destination_tar( fake_distination, destination);
-
+        if(cp_destination_tar( fake_distination, destination) == 0){
+            remove(fake_distination);
+            return 0;
+        }
         remove(fake_distination);
+        return 1;
     }
+    return 0;
 }
 
-void cp_normal(char source[100], char destination[100]){
+int cp_normal(char source[100], char destination[100]){
     
     char sourceAbs[100],destinationAbs[100];
 
@@ -2593,18 +2709,18 @@ void cp_normal(char source[100], char destination[100]){
     }
 
 
-    //printf("%s  ->  %s",sourceAbs,destinationAbs);
     if(checkIfValide(sourceAbs,destinationAbs) == 0){
-        return;
+        return 0;
     }
     
 
     int fd1,fd2;
     fd1 = open(sourceAbs, O_RDONLY);
     if (fd1 < 0) {
-        
-            printf("\nVeuillez vérifier le nom du fichier \n");
-        return;
+        write(STDERR_FILENO,"cp : cannot stat '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"': No such file or directory\n",29);
+        return 0;
     }
 
     //4- Si le fichier source est bien ouvert, on ouvre le fichier destination avec les modes d'ecriture et de création 
@@ -2612,29 +2728,38 @@ void cp_normal(char source[100], char destination[100]){
     char dest_file[100];
     
     strcpy(dest_file,destinationAbs);
-    
     strcat(dest_file,recupere_nom(sourceAbs));
+
+    if((strcmp(sourceAbs,dest_file)==0) )
+    {
+        write(STDERR_FILENO,"cp : '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"' and '",7);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"' are the same file\n",20);
+        return 0;
+    }
 
     fd2 = open(dest_file, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
     if (fd2 < 0) {
-        printf("\nErreur dans l'ouverture du fichier %s \n errno : %d \n", destination, errno);
-        return;
+        write(STDERR_FILENO,"cp: cannot create regular file '",32);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"': Permission denied\n",21);
+        return 0;
     }
 
     //5- Si le fichier destination est bien ouvert, tout est bien passé, on commence le transfert des données de source vers destination 
     int nbread;
-    while ((nbread = read(fd1, Buffer, sizeof(Buffer))) && nbread > 0) {
-        if (write(fd2, Buffer, nbread) < 0) {
-            printf("\nErreur dans la copie des fichiers, veuillez réesayer\n");
-            return;
-        }
+    while (nbread = read(fd1, Buffer, sizeof(Buffer))) {
+
+        write(fd2, Buffer, nbread);
     }
 
     //6- On ferme les fichiers 
 
     close(fd1);
     close(fd2);
-
+    return 1;
 }
 /***
 	cp_source_tar : une partie de la fonction cp (qui traite la copie dans le cas ou la source est un tarball)
@@ -2663,12 +2788,14 @@ int cp_source_tar(char source[100], char destination[100]) {
     }
 
 
-    int fd1,trouv = 0, entete = 0, size1 = 0, fd2,  nblus = 0, size = 0;
+    int fdS ,trouv = 0, entete = 0, size1 = 0, fdD,  nblus = 0, size = 0;
     //1-  on essaie d'ouvrir le tar pour savoir s'il existe 
-    fd1 = open_tar_file_read(sourceAbs);
-    if (fd1 < 0) {
+    fdS = open_tar_file_read(sourceAbs);
+    if (fdS < 0) {
         // le tarball n'existe pas ou le chemin vers le tarball n'existe pas 
-        printf("le chemin que vous avez introduit n'est pas valide");
+        write(STDERR_FILENO,"cp : cannot stat '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"': No such file or directory\n",29);
         return 0; // on sort 
     }
 
@@ -2684,80 +2811,127 @@ int cp_source_tar(char source[100], char destination[100]) {
     strcpy(chemin, destinationAbs);
     strcat(chemin, recupere_nom(sourceAbs));
 
-    if ((strcmp(sourceAbs, destinationAbs) == 0) || (open(chemin, O_RDONLY)) != -1) {
-        printf("le fichier %s existe déja à la destination \n", source);
+    if ((strcmp(sourceAbs, chemin) == 0) ) {
+        close(fdS);
+        write(STDERR_FILENO,"cp : '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"' and '",7);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"' are the same file\n",20);
         return 0;
     }
 
     //3- maintenant on effectue une recherche du fichier dans le tarball pour recuperer ses informations  
 
-    recherche_tar(fd1, ch_in_tar, & trouv, & entete, & size1);
+    recherche_tar(fdS, ch_in_tar, & trouv, & entete, & size1);
     
     if (trouv == 0) {
-        close(fd1);
-        printf("\n le fichier %s n'existe pas \n", source);
+        close(fdS);
+        write(STDERR_FILENO,"cp : cannot stat '",5);
+        write(STDERR_FILENO,source,strlen(source));
+        write(STDERR_FILENO,"': No such file or directory\n",29);
         return 0;
     }    
     
     //-4 on a toruvé le fichier a copier et tout va bien donc creer la destination , 
     //    et le fichier destination n'est pas dans un tarball on le creer s'il existe pas ou on l'ecrase 
     
-    fd2 = open(chemin, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-    if (fd2 < 0) {
-        close(fd1);
-        printf("\nErreur dans l'ouverture du fichier %s . \n", destination);
+    fdD = open(chemin, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    if (fdD < 0) {
+        close(fdS);
+        write(STDERR_FILENO,"cp: cannot create regular file '",32);
+        write(STDERR_FILENO,destination,strlen(destination));
+        write(STDERR_FILENO,"': Permission denied\n",21);
         return 0;
     }
-    /*
-    lseek(fd1,-BLOCKSIZE,SEEK_CUR);
-    nblus = read(fd1,Buffer,BLOCKSIZE);
-write(1, Buffer, nblus);write(1,"\nyes ..\n", 8);*/
+
     //6-on copie le contenu 
 
-    int block = size1 >> BLOCKBITS; //recuperer le nombre de block de fichier
-
+    int block = 1+(size1 >> BLOCKBITS); //recuperer le nombre de block de fichier
     for (int k = 0; k < block; k++) {
         //on recupere les block du contenu et on les insère au fichier 
-        if ((nblus = read(fd1, Buffer, BLOCKSIZE)) > 0) {
-            write(fd2, Buffer, nblus);
+        if ((nblus = read(fdS, Buffer, BLOCKSIZE)) > 0) {
+            write(fdD, Buffer, nblus);
         }
     }
-    close(fd1);
-    close(fd2);
+    close(fdS);
+    close(fdD);
     return 1;
 }
+
 /***
 	cp_ : fonction qui implémente le fonctionnement de cp
 	entrées: source et destination 
 	sorties:void
 ***/
-void cp (char source[100], char destination[100]){
+int cp (char source[100], char destination[100]){
 
-    if ((strstr(source, ".tar") == NULL) && (strstr(destination, ".tar") == NULL)) {
+    char sourceAbs[100],destinationAbs[100];
+
+    strcpy(sourceAbs,source);
+    get_ch_absolu(sourceAbs);
+    remove_points(sourceAbs);
+    remove_2points(sourceAbs);
+
+    /// construire le chemin absolue de destination
+    strcpy(destinationAbs,destination);
+    get_ch_absolu(destinationAbs);
+    remove_points(destinationAbs);
+    remove_2points(destinationAbs);
+    
+    if(strstr(sourceAbs, ".tar") == NULL){
+        struct stat st;
+        stat(sourceAbs, &st);
+        if( S_ISDIR(st.st_mode)){
+            write(STDERR_FILENO,"cp ; omitting directory '",25);
+            write(STDERR_FILENO,source,strlen(source));
+            write(STDERR_FILENO,"'\n",2);
+            return 0;
+        }
+    }
+    if(strstr(destinationAbs, ".tar") == NULL){
+        struct stat st;
+        stat(destinationAbs, &st);
+        if(! S_ISDIR(st.st_mode)){
+            write(STDERR_FILENO,"cp ; destination is not a directory '",37);
+            write(STDERR_FILENO,destination,strlen(destination));
+            write(STDERR_FILENO,"'\n",2);
+            return 0;
+        }
+    }
+
+
+    if ((strstr(sourceAbs, ".tar") == NULL) && (strstr(destinationAbs, ".tar") == NULL)) {
             // 1.1- source comporte pas tar --> destination comporte pas tar
-            cp_normal(source, destination);
-            return;
+            return cp_normal(source, destination);
+            
     }
 
-    if ((strstr(source, ".tar") == NULL) && (strstr(destination, ".tar") != NULL)) {
+    if ((strstr(sourceAbs, ".tar") == NULL) && (strstr(destinationAbs, ".tar") != NULL)) {
             // 1.2- source comporte pas tar --> destination  tar
-            cp_destination_tar(source, destination);
-            return;
+            return cp_destination_tar(source, destination);
+            
     }
-
-    if ((strstr(source, ".tar") != NULL) && (strstr(destination, ".tar") == NULL)) {
+    
+    if(strstr(sourceAbs,".tar") != NULL && strlen(strstr(sourceAbs,".tar")) <= 5){
+            write(STDERR_FILENO,"cp : omitting directory '",25);
+            write(STDERR_FILENO,source,strlen(source));
+            write(STDERR_FILENO,"'\n",2);
+            return 0;
+    }
+    
+    if ((strstr(sourceAbs, ".tar") != NULL) && (strstr(destinationAbs, ".tar") == NULL)) {
             // 1.3- source  tar --> destination comporte pas tar
-            cp_source_tar(source, destination);
-            return;
+            return cp_source_tar(source, destination);
+            
     }
 
-    if ((strstr(source, ".tar") != NULL) && (strstr(destination, ".tar") != NULL)) {
+    if ((strstr(sourceAbs, ".tar") != NULL) && (strstr(destinationAbs, ".tar") != NULL)) {
             // 1.4- source comporte tar --> destination comporte  tar 
-            cp_source_destination_tar(source, destination);
-            return;
+            return cp_source_destination_tar(source, destination);
+            
     }
-
-    write(STDOUT_FILENO,"unknown error\n",14);
+    return 0;
 }
 
 void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]){
@@ -2767,4 +2941,11 @@ void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]){
 		i++;
 	}
 	listeArgs[i]=NULL;
+}
+
+//mv
+void mv(char source[100], char destination[100]){
+    if(cp(source, destination)){
+        rm(source);
+    }
 }
