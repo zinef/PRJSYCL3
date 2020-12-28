@@ -194,7 +194,7 @@ void my_cd(char *path){
 				strcpy(tar_actuel,"");
 				in_tar=0;
 			}else{
-				write(1,"cd : Le répértoire n'existe pas\n",sizeof("cd : Le répértoire n'existe pas\n"));
+				write(1,"cd : No such directory\n",sizeof("cd : No such directory\n"));
 			}
 		}else{
 			char pwd[1024];
@@ -210,7 +210,7 @@ void my_cd(char *path){
 				strcpy(tar_actuel,"");
 				in_tar=0;
 			}else{
-				write(1,"cd : Le répértoire n'existe pas\n",sizeof("cd : Le répértoire n'existe pas\n"));
+				write(1,"cd : No such directory\n",sizeof("cd : No such directory\n"));
 			}
 	}
 }
@@ -242,8 +242,8 @@ int deplacement_in_tar(char *path,int entete_a_lire){
 	char *buf_rep=malloc(size);
 	n=read(fd,buf_rep,size);
 	if (n<0){
-		perror("erreur dans la lecture");
-		exit(errno);
+		write(1,"Erreur dans la lecture\n",sizeof("Erreur dans la lecture\n"));
+		return -1 ;
 	}
 	//free(buf_rep);
 	//free(st);
@@ -493,8 +493,7 @@ void my_cd_global(char *path){
 						deplacement_in_tar(chemin_absolu,el);
 					}else{
 						if(check_path == 3){//premier déplacement vers un répértoire dans le tar 
-											//on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel
-							 
+							//on a l'entete du répértoire dans entete_lu et le tar c'est tar_actuel 
 							//modification de pwd_global
 							deplacement_in_tar(chemin_absolu,el);
 						}else{
@@ -630,19 +629,20 @@ int my_mkdir(char *nom_rep){
 				perror("erreur dans la lecture");
 				exit(EXIT_FAILURE);
 			}
-			
+			//struct passwd *pw = getpwuid(getuid());
+            //struct group  *gr = getgrgid(getgid());
 			st=(struct posix_header * ) buf;
 			strcpy(st->name,"");
 			strcpy(st->name,tmp);
 			sprintf(st->size,"%o",0);
 			st->typeflag='5';
-			sprintf(st->mode,"0000700");
-			//time(&t);
-			//sprintf(st->mtime, "%ld",t);
-			//sprintf(st->uid,"%d",getuid());
-			//sprintf(st->gid,"%d",getuid());
-			//strcpy(st->uname,uid);
-			//strcpy(st->gname,uid);
+			sprintf(st->mode,"0000700");//drwx------
+			time(&t);
+			sprintf(st->mtime, "%lo",t);
+			sprintf(st->uid,"%o",getuid());
+			sprintf(st->gid,"%o",getgid());
+			strcpy(st->uname,"user");
+			strcpy(st->gname, "user");
 			strcpy(st->magic,TMAGIC);
 			strcpy(st->version,TVERSION);
 			set_checksum(st);
@@ -1218,32 +1218,34 @@ void fork_pipes (int n, struct command *cmd){
 	pid_t pid,wpid;
 	int in, fd [2];
 	int status=0;
-	/*le premier processus doit lire depuis fd 0 */
+   //le premier processus doit lire depuis fd 0 
 	in = 0;
 
-	/*duppliquer les processus*/
+  //duppliquer les processus
   for (i = 0; i < n - 1; ++i)
     {
       pipe (fd);
 
-	  /* on écrit dans fd[1] , on garde 'in' de l'itération prendente */
+      // on écrit dans fd[1] , on garde 'in' de l'itération prendente 
       dupliquer_proc (in, fd [1], cmd + i);
 
-      /* pas besoin d'ecrire dans le tube ,le fils ecrira dedans.  */
+      // pas besoin d'ecrire dans le tube ,le fils ecrira dedans.  
       close (fd [1]);
 
-      /* sauvgarder 'in', le fils qui va suivre va lire depuis 'in'.  */
+      // sauvgarder 'in', le fils qui va suivre va lire depuis 'in'.  
       in = fd [0];
     }
 
-  /*dernier pipe */  
+  //dernier pipe   
   if (in != 0)
     dup2 (in, 0);
 	while ((wpid = wait(&status)) > 0);
   	executerCmdSimple(cmd[i].argv);//executer_simple command 
 }
 
-//is
+/***
+	stop : fonction appeler après la capture du signal Ctrl+c (utiliser pour le cas des commandes sans paramètres comme cat)
+***/
 void stop(int a){
     running = 0;
 }
@@ -1387,7 +1389,7 @@ void remove_points(char *ch){
 	sorties : void
 ***/
 void remove_2points(char *ch){
-     /// "ch" ne contien pas de "/." on change rien 
+     /// "ch" ne contient pas de "/." on change rien 
     if(strstr(ch,"..") == NULL){
         return;
     }
@@ -1836,7 +1838,7 @@ void cat(char ch[100]){
     if(strlen(ch)==0){
         int cpt;
         int i=1;
-        while (running){
+        while (running && i){
             i = read(STDIN_FILENO,Buffer,BLOCKSIZE);
             write(STDOUT_FILENO,Buffer,i);
         }
@@ -2123,6 +2125,11 @@ void end_redirect(char ch[100],int fd ,char *out_file,char type[10]){
         return;
     }
 }
+/***
+	get_type : fonction utilitaire pour le parsing des commandes avec redirections
+	entrées:symbole de redirection et un caractère 
+	sorties: un pointeur vers une chaine de cractères
+***/
 char* get_type (char symb[8],char before ){
 
     if (strstr(symb,">>&1") != NULL){
@@ -2145,7 +2152,11 @@ char* get_type (char symb[8],char before ){
         }
     }
 }
-
+/***
+	parsing_red : fonction pour le parsing des redirections
+	entrées:path , chaine de caractères , une liste des arguments de la commande comportant des redirections 
+	sorties: int
+***/
 int parssing_red(char chainne[100],char *listArgsRed[100]){
     int nb_red = 0;    /// le nombre de redirection
     int check_symb = 0;/// pour voir quelle et le type de redirection
@@ -2167,7 +2178,6 @@ int parssing_red(char chainne[100],char *listArgsRed[100]){
             listArgsRed[nb_args] = res;
             nb_args++;
         }
-        ///printf("res : %s , symb : %c\n",res,chainne[check_symb]);
         while (chainne[check_symb] == ' ')
         {
             check_symb++;
@@ -2197,7 +2207,120 @@ int parssing_red(char chainne[100],char *listArgsRed[100]){
     
     return nb_red;
 }
+/***
+	strcmp_red : fonction utilitaire pour comparaison de chaines pour les redirections
+	entrées:chaine
+	sorties:entier
+***/
+int strcmp_red(char *str){
+    if(strcmp(str,"<") == 0 || strcmp(str,">") == 0 || strcmp(str,"2>") == 0){
+        return 0;
+    }
+    if( strcmp(str,">>") == 0 || strcmp(str,"2>>") == 0 || strcmp(str,"2>&1") == 0 || strcmp(str,"2>>&1") == 0){
+        return 0;
+    }
+    return 1;
+}
+/***
+	start_all_redirect : fonction pour lancer toutes les redirections pour les commandes avec redirection
+	entrées:path , descripteurs de fichiers ,fichiers pour redirections , liste arguments commande redirection , nombre de redirections
+	sorties:int 
+***/
+int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int nb_red){
+    int i = 0;
+    char copy1[100],copy2[10];
+    if(nb_red > 0){
+        strcpy(copy1,listArgsRed[i]);
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            if((*fd1 = redirect_res(copy1 ,out_file1 , copy2))<=0){
+                return 0;
+            }
+        }
+    }      
+    
+    i++;
+    if(nb_red > 1){
+        strcpy(copy1,listArgsRed[i]);
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            if((*fd2 = redirect_res(copy1 ,out_file2 , copy2))<=0){
+                return 0;
+            }
+        }
+    }      
+    
+    i++;
+    if(nb_red > 2){
+        strcpy(copy1,listArgsRed[i]);
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            if((*fd3 = redirect_res(copy1 ,out_file3 , copy2))<=0){
+                return 0;
+            }
+        }
+    }      
+    return 1;
+}
+
+/***
+	end_all_redirect : fonction pour terminer les redirections 
+	entrées:descripteurs , fichiers de redirection , liste des arguments de la commande en question , nombre de redirections
+	sorties:void
+***/
+void end_all_redirect(int *fd1, int *fd2, int *fd3, char *out_file1,char *out_file2,char *out_file3, char *listArgsRed[100], int nb_red){
+    int i = 0;
+    char copy1[100],copy2[10];
+    if(nb_red > 0){
+        strcpy(copy1,listArgsRed[i]);
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            end_redirect(copy1,*fd1,out_file1,copy2);
+            *fd1 = 0;
+        }
+    }      
+    
+    i++;
+    if(nb_red > 1){
+        strcpy(copy1,listArgsRed[i]);
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            end_redirect(copy1,*fd2,out_file2,copy2);
+            *fd2 = 0;
+        }
+    }      
+    
+    i++;
+    if(nb_red > 2){
+        strcpy(copy1,listArgsRed[i]);
+
+        while ( listArgsRed[i+1] !=NULL && strcmp_red(copy1) )  {i++;strcpy(copy1,listArgsRed[i]);}
+
+        if( listArgsRed[i+1] != NULL ){
+            strcpy(copy2,copy1);
+            strcpy(copy1,listArgsRed[i+1]);
+            end_redirect(copy1,*fd3,out_file3,copy2);
+            *fd3 = 0;
+        }
+    }      
+}
 //cp et mv 
+/***
+	recupere_nom : fonction utilitaire pour la manipulation des chemins
+***/
 char *recupere_nom(char *path)
 {
     char *pend,str[100];
@@ -2211,7 +2334,11 @@ char *recupere_nom(char *path)
 	    return path;
     }
 }
-
+/***
+	recherche_tar :une extension d'une fonction qui fait de la recherche dans un tarball
+	entrées : descripteur fichier ,nom fichier à rechercher ,booléen , entete lu si c'est le cas , taille du fichier si trouv=1
+	sories : void
+***/
 void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file){
 
     int size=0,EnteteAlire=0;
@@ -2248,7 +2375,11 @@ void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_fi
 		lseek(fd,size*BLOCKSIZE,SEEK_CUR);
 	} 
 }
-
+/***
+	open_tar_file_rdwr : fonction pour ouvrir un tarball en lecture et ecriture 
+	entrées : nom du fichier
+	sorties : descripteur du fichier
+***/
 int open_tar_file_rdwr(char ch[100]){
     char s[100];
     char str2[100];
@@ -2258,7 +2389,9 @@ int open_tar_file_rdwr(char ch[100]){
     str2[strlen(ch) - i + 4]='\0';
     return open(str2,O_RDWR);
 }
-
+/***
+ checkIfValide : fonction utilitaire pour la manipulation des chemins
+***/
 int checkIfValide(char source[100], char destination[100]){
     //1-on verifie qu'on a recu deux arguments 
     if(source== NULL || destination==NULL ){
@@ -2292,7 +2425,9 @@ int checkIfValide(char source[100], char destination[100]){
     return 1;
 
 }
-
+/***
+	posix_to_buffer : fonction pour ecrire les carcatéristiques d'une entête posix_header 
+***/
 int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD, posix_header *st){
     //récupération des caractéristiques du fichier source
     struct stat * statbuf = malloc(sizeof(struct stat * ));
@@ -2329,7 +2464,11 @@ int posix_to_buffer(char ch_in_tar[100],int fdS, int fdD, posix_header *st){
 
     return 1;
 }
-
+/***
+	cp_destination_tar : une partie de la fonction cp (qui traite la copie dans le cas ou la destination est un tarball)
+	entrées: source et destination 
+	sorties: int 
+***/
 int cp_destination_tar(char source[100], char destination[100]) {
 
     char sourceAbs[100],destinationAbs[100];
@@ -2407,7 +2546,11 @@ int cp_destination_tar(char source[100], char destination[100]) {
     close(fdD);
     return 1;
 }
-
+/***
+	cp_source_destination_tar : une partie de la fonction cp (qui traite la copie dans le cas ou la source et la destination est un tarball)
+	entrées: source et destination 
+	sorties: int 
+***/
 
 void cp_source_destination_tar(char source[100], char destination[100]) {
 
@@ -2489,7 +2632,11 @@ void cp_normal(char source[100], char destination[100]){
     close(fd2);
 
 }
-
+/***
+	cp_source_tar : une partie de la fonction cp (qui traite la copie dans le cas ou la source est un tarball)
+	entrées: source et destination 
+	sorties: int 
+***/
 int cp_source_tar(char source[100], char destination[100]) {
 
     char sourceAbs[100],destinationAbs[100];
@@ -2575,6 +2722,11 @@ write(1, Buffer, nblus);write(1,"\nyes ..\n", 8);*/
     close(fd2);
     return 1;
 }
+/***
+	cp_ : fonction qui implémente le fonctionnement de cp
+	entrées: source et destination 
+	sorties:void
+***/
 void cp (char source[100], char destination[100]){
 
     if ((strstr(source, ".tar") == NULL) && (strstr(destination, ".tar") == NULL)) {
@@ -2601,5 +2753,14 @@ void cp (char source[100], char destination[100]){
             return;
     }
 
-    write(STDOUT_FILENO,"unknown erro\n",13);
+    write(STDOUT_FILENO,"unknown error\n",14);
+}
+
+void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]){
+	int i=0;
+	while((listArgsRed[i] != NULL)&&(strstr(listArgsRed[i],">") == NULL) && (strstr(listArgsRed[i],"<") == NULL)){
+		listeArgs[i]=listArgsRed[i];
+		i++;
+	}
+	listeArgs[i]=NULL;
 }

@@ -34,14 +34,14 @@
 static volatile int running = 1;
 
 /*working directory*/
-char pwd_global[1024]="";//initialisation : répertoire ou le shell se lance
+char pwd_global[1024]="";
 int in_tar=0; 
 char tar_actuel[1024]="";
 char strTmp[255]; 
 char Buffer[BLOCKSIZE];//buffer pour lectures et ecritures (utilisé par certaines fonctions)
-int std_out_copy , std_error_copy , std_in_copy; //des variables pour sauvgarder les entrées et sorties
+int std_out_copy , std_error_copy , std_in_copy; //des variables pour sauvgarder les entrées et sorties pour les redirections
 /*la liste des commandes valables dans le Shell */
-char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat","cp","clear"};
+char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat","cp","mv"};//c'est bien le nom des commandes ,bien evidemment sur quelques une , on peut appliquer des options
 /*la structure d'une commande */
 struct Commande{
 	char nomCommande[30];
@@ -50,7 +50,7 @@ struct Commande{
 	int nbOptionsEffect;
 	char *optionsCommande[NBOPTIONS];
 };
-struct command
+struct command //structure pour les commandes complexes (i.e. avec pipes)
 {
    char **argv;
 };
@@ -88,7 +88,7 @@ void seek_n_block(int fd ,int nb_block);
 void seek_next_entete (int fd ,struct posix_header *header);
 int rm_in_tar(int fd,char file_name[100]);
 int rm(char chaine[100]);
-//is
+//ls ,cat ,redirections
 void stop(int a);
 void get_entete_info(posix_header *header,char buffer[BLOCKSIZE]);
 int cmp_name(char str_cmp[100], char str_cmp2[100]);
@@ -116,6 +116,9 @@ int redirect_res(char ch[100],char *out_file,char type[10]);
 void end_redirect(char ch[100],int fd ,char *out_file,char type[10]);
 int parssing_red(char chainne[100],char *listArgsRed[100]);
 char* get_type (char symb[8],char before);
+int strcmp_red(char *str);
+int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int nb_red);
+void end_all_redirect(int *fd1, int *fd2, int *fd3, char *out_file1,char *out_file2,char *out_file3, char *listArgsRed[100], int nb_red);
 //cp et mv
 void recherche_tar(int fd, char nomfic[100],int *trouv, int *entete,int *size_file);
 int open_tar_file_rdwr(char ch[100]);
@@ -126,4 +129,5 @@ int cp_source_tar(char source[100], char destination[100]);
 int cp_destination_tar(char source[100], char destination[100]);
 void cp_source_destination_tar(char source[100], char destination[100]);
 void cp (char source[100], char destination[100]);
+void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]);
 #endif //__OUR_SHELL_ZFI_INCLUDED__

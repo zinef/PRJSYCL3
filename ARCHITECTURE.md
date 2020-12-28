@@ -1,3 +1,4 @@
+
 # Introduction 
 ### Sujet : un `Shell` pour les`tarballs` (*.tar) 
 Le but du projet est de faire tourner un <ins>`Shell`</ins> qui permet à l'utilisateur de traiter les <ins>`tarballs`</ins> comme s'il s'agissait de répertoires, **sans que les tarballs ne soient désarchivés**.
@@ -87,9 +88,9 @@ Un Shell fait trois choses principales au cours de sa vie :
 ## Outils techniques  pour l'implémentation 
 + La manipulation des fichiers se fera à l'aide des appels systèmes `open`, `close`, `read`, `write` 
 + La manipulation des répertoire se fera avec `opendir`, `readdir`, `closedir`  et `getcwd`, `chdir`, `mkdir` 
-+ L'analyse peut être effectuée à l'aide de `strsep ("")`
++ L'analyse peut être effectuée à l'aide de `strsep ("")` ,`strstr()` et quelques fonctions de manipulation de chaînes de caractères qui figurent dans `<string.h>`
 + Après l'analyse, on vérifie la liste des commandes intégrées et, le cas échéant, on l'exécute 
-+ La détection des pipes peut également être effectuée à l'aide de `strsep («|»)` par exemple . Pour les gérer, on sépare d'abord la première partie de la commande de la seconde. Ensuite, après avoir analysé chaque partie, on appel les deux parties dans deux nouveaux enfants séparés, en utilisant la famille des `exec`.
++ La détection des pipes peut également être effectuée à l'aide de `strsep («|»)` par exemple . 
 + pour plus de détails … (voir le code source)
 
 ## Expression de besoins 
@@ -108,16 +109,16 @@ Un Shell fait trois choses principales au cours de sa vie :
 
 | Id | Spécification | État | Criticisme | Stabilité | 
 | -- | --------------   | ----  | -----------  | ------- | 
-| 1 | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Proposé | Critique | Stable | 
-| 2 | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Proposé | Critique | Stable | 
-| 3 |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Proposé | Critique | Stable | 
-| 4 | Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball | Proposé | Critique | Stable | 
-| 5 | Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option  | Proposé | Critique | Stable | 
-| 6 | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarball quand ils sont utilisés sans option ou avec l'option `-r` | Proposé | Critique | Stable | 
-| 7 | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option ou avec l'option `-l` | Proposé | Critique | Stable | 
-| 8 | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarball quand il est utilisé sans option| Proposé | Critique | Stable | 
-| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Proposé | Critique | Stable | 
-| 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Proposé |  Critique | Stable |  
+| 1 | Le système (Shell) doit permettre à l'utilisateur de manipuler les tarballs sans même les désarchiver | Incorporé | Critique | Stable | 
+| 2 | Le système doit permettre à l'utilisateur d'utiliser les commandes `cd` et `exit` avec leur comportement habituel | Incorporé | Critique | Stable | 
+| 3 |Le système doit permettre à l'utilisateur d'utiliser toutes les commandes externes et elles  doivent fonctionner normalement si leur déroulement n'implique pas l'utilisation d'un fichier (au sens large) dans un tarball | Incorporé | Critique | Stable | 
+| 4 | Le système doit permettre à l'utilisateur d'utiliser la commande `pwd` et celle-ci doit fonctionner y compris si le répertoire courant passe dans un tarball | Incorporé | Critique | Stable | 
+| 5 | Le système doit permettre à l'utilisateur d'utiliser `mkdir`, `rmdir` et `mv` et doivent fonctionner y compris avec des chemins impliquant des tarballs quand ils sont utilisés sans option  | Incorporé | Critique | Stable | 
+| 6 | Le système doit permettre à l'utilisateur d'utiliser `cp` et `rm` et doivent fonctionner y compris avec des chemins impliquant des tarballs quand ils sont utilisés sans option ou avec l'option `-r` | Incorporé | Critique | Stable | 
+| 7 | Le système doit permettre à l'utilisateur d'utiliser   `ls` et elle doit fonctionner y compris avec des chemins impliquant des tarballs quand il est utilisé sans option ou avec l'option `-l` | Incorporé | Critique | Stable | 
+| 8 | Le système doit permettre à l'utilisateur d'utiliser `cat` et elle doit fonctionner y compris avec des chemins impliquant des tarballs quand il est utilisé sans option| Incorporé | Critique | Stable | 
+| 9 | Le système doit permettre à l'utilisateur d'utiliser les redirections de l'entrée, de la sortie et de la sortie erreur | Approuvé | Critique | Stable | 
+| 10 | Le système doit permettre à l'utilisateur d'introduire des commandes complexes (utilisation des pipes "\|") | Incorporé |  Critique | Stable |  
 
 **État**  
 `Proposé : en cours de discussion, pas encore validé`  
@@ -176,9 +177,9 @@ struct posix_header
 2. Tableau de chaines de caractères des commandes existantes dans le Shell
 ```c
 ...
-#define NBCMD 4
+#define NBCMD 10
 ...
-char *listeDesCommande[NBCMD]={"cd","ls","pwd","mkdir"};
+char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat","cp","mv"};
 ```
 avec `NBCMD` nombre de commandes dans le Shell .
 3. la structure `commande`qui définie une commande avec son nom , ses paramètres et ses options 
@@ -195,21 +196,52 @@ struct Commande{
 	char *optionsCommande[NBOPTIONS];
 };
 ```
-avec `NBPARAMS` et `NBOPTIONS` le nombre de paramètres et le nombre d'options , respectivement  , d'une commande donnée.
-
-### Prototypes de fonctions 
-Les prototypes de fonctions définies pour l'instant sont les suivantes : 
+avec `NBPARAMS` et `NBOPTIONS` le nombre de paramètres et le nombre d'options , respectivement  , d'une commande donnée.  
+4. La structure `command` qui définie une liste de chaînes , utilisée pour exécuter les commandes complexes   
 ```c
-int trouverPipe(char *entree,char **commandesSiPipe);
-void Initialiser_shell();
-int recupEntry(char *ch);
-void executerCmdSimple(char *cmd[]);
-void executerCmdComplexe(char *cmd[]);
-void my_pwd();
-void recupArgs(char *entree,char **listeArgs);
-int commandeValide(char **listeArgs);
-int decortiquerEntree(char *entree,char **listeArgs,char **listeArgsPipe);
+struct command {
+   char **argv;
+};
+```  
+
+5. Les trois variables globales `pwd_gloabl` , `in_tar` et `tar_actuel` qui permettent de manipuler _working directory_ (répértoire actuel de travaille) . Comme notre shell peut traverser les tarballs alors des variables pareils s’avèrent nécessaires pour orchestrer les déplacement dans le shell avec la commande cd et garder la trace de `pwd` _(i.e. wd)_
+```c
+...
+char pwd_global[1024]="";
+int in_tar=0; 
+char tar_actuel[1024]="";
+...
 ```
+`pwd_global` : pour sauvegarder a tout moment le répertoire de travail actuel 
+`in_tar` :   vaut 1 si on est dans un chemin qui inclue un tar , 0 sinon .
+`tar_actuel` : variable qui porte le nom du tar actuel si `pwd_global` comporte un tar .  
 _`NOTABENE:pour plus de détails voir le code ...`_  
-Les fonctionnalités de cette première partie sont exactement le squelette du Shell , cela veut dire les fonctions et procédures qui vont être utilisées pour exécuter par las suite  les commandes qui vont manipuler des fichier *.tar .
- 
+Les fonctionnalités de la première partie sont exactement le squelette du Shell , cela veut dire les fonctions et procédures qui vont être utilisées pour exécuter par la suite  les commandes qui vont manipuler des fichier *.tar .
+ # Partie II : 
+ Comme la partie I était  le squelette du Shell . la partie II  réponde exactement à la partie spécification des besoins en implémentant les spécifications techniques et spécifications fonctionnelles .
+ ## Structure et fichiers 
+ la structure du projet est la suivante :  
+ + Le projet comporte essentiellement les fichiers suivants , `main.c` qui est le programme principale duquel on lance le Shell (zfi) ,`our_shell_zfi.c` un fichier source `.c` qui contient les différentes fonctions du projet (le corps des fonctions) , `our_shell_zfi.h` un fichier source `.h` (fichier entête ou _header file_)   qui comporte les prototypes (ou signatures)  des fonctions , les variables globales , les définitions `#define` et les inclusions `#include`   
+ + Des fichiers en Markdown , `AUTHORS.md` ,`README.md` et ce fichier `ARCHITECTURE.md` qui décrivent respectivement , les auteurs du projets , description du projet et l'architecture du projet   
+ + Des répertoires utilitaires pour l'avancement du projet et la représentation de l'architecture  , `Images` , `Drafts` et `Collab`  
+ + Un fichier `tests.c` pour les testes unitaires de fonctions  
+ + Un `Dockerfile` pour construire l'image sur laquelle marche le Shell  
+### Détails et explication du contenu des fichiers  
+commençant par le programme principale , i.e `main.c` qui comporte trois parties 
++ La première partie est la partie de déclaration et initialisation des variables pour la gestion des arguments et des redirections ainsi que la capture des signaux (pour quelques commandes)
++ La deuxième partie c'est un appel à la fonction `Initialiser_shell()` qui lance un premier affichage du Shell avant de passer la ligne de commande 
++ La troisième partie c'est la boucle infinie du Shell  `for(ever)`dans laquelle on récupère le répertoire de travail et on l'affiche puis on attend l'entrée de l'utilisateur pour pouvoir appliquer des conditions de vérification et le _parsing_ de a la commande entrée . après analyse de la commande  , on distingue que si la commande est une commande complexe ou une commande simple ou une commande qui comporte des redirections pour pouvoir appeler les fonctions chargées d'excuter chaque cas  
+
+Passons maintenant à l’exécution des différentes commandes :
++ Pour les commandes simples qui ne comportent pas des redirections , on fait appel à la commande `executerCmdSimple(char ** ListeArgs)` qui se charge d'exécuter une commande simple on faisant appel à chaque commande après tests sur la variable `ListeArgs` (tableau de chaînes de caractères des arguments de la commande) récupérée après _parsing_ 
++ Pour les commandes simples avec redirections , après détection des redirections par le programme principale et exactement dans la partie du _parsing_ des redirections  `parsing_red()`, on  fait appel à la fonction  `int start_all_redirect(int *fd1,int *fd2,int *fd3,char *out_file1, char *out_file2 ,char *out_file3, char *listArgsRed[100],int nb_red);` qui lance les redirections (changement des _in_ & _out_ ) selon les redirections entrées dans `listArgsRed` (qui représente le _parsing_ de l'entrée) , puis on fait à nouveau appel à la fonction `executerCmdSimple()` qui va se charger exécuter la commande sous les conditions fixées par les redirections , après exécution on  fait appel à `void end_all_redirect(int *fd1, int *fd2, int *fd3, char *out_file1,char *out_file2,char *out_file3, char *listArgsRed[100], int nb_red);` qui va se charger se de terminer les redirections pour pouvoir récupérer le fonctionnement conditions normal du shell 
++ Pour les commandes complexes (i.e comportant des pipes `|`) on va appeler la fonction `executerCmdComplexe()` qui va se charger de construire un tableau de commande ` struct command tcmd [MAXCMDs]` à faire passer à la fonction `fork_pipes(n,tcmd)` qui utilise un tube anonyme pour la communication interprocessus et une fonction `dupliquer_proc()` qui crée des processus avec la directive `fork()` et appel à nouveau `executercmdSimple()` pour exécuter toutes  les commandes pipées 
+
+Pour le fichier `makefile` , c'est un fichier qui comporte essentiellement les commandes de compilation et d'exécution du Shell ainsi la commande de création de l'image docker à partir du `Dockerfile` qui se trouve dans le même répertoire  
++ Pour compiler : `make compiler` (cette opération nécessite l'installation de la la bibliothèque C _readline_ , mais si on l’exécute dans le conteneur  docker cette bibliothèque sera installée à priori)
++ Pour exécuter : `make exec`
++ Pour lancer la création de l'image docker : `make image` (cette opération nécessite l'installation du docker _engine_ sur la machine)
+
+Pour le fichier `Dockerfile` , il comporte les instructions nécessaires pour construire une image sur laquelle tourne le Shell dans son propre environnement.  
+
+
