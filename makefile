@@ -5,7 +5,10 @@ exec:
 	./prgm
 
 image:
-	sudo docker build -t zfiShell .
+	sudo docker build -t zfishell .
 	
 debug:
 	gdb ./prgm
+	
+run:
+	sudo docker run -ti zfishell 
