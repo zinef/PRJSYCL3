@@ -181,7 +181,7 @@ struct posix_header
 ...
 char *listeDesCommande[NBCMD]={"cd","rm","pwd","mkdir","rmdir","exit","ls","cat","cp","mv"};
 ```
-avec `NBCMD` nombre de commandes dans le Shell .
+avec `NBCMD` nombre de commandes dans le Shell .  
 3. la structure `commande`qui définie une commande avec son nom , ses paramètres et ses options 
 ```c 
 ...
@@ -212,8 +212,8 @@ int in_tar=0;
 char tar_actuel[1024]="";
 ...
 ```
-`pwd_global` : pour sauvegarder a tout moment le répertoire de travail actuel 
-`in_tar` :   vaut 1 si on est dans un chemin qui inclue un tar , 0 sinon .
+`pwd_global` : pour sauvegarder a tout moment le répertoire de travail actuel  
+`in_tar` :   vaut 1 si on est dans un chemin qui inclue un tar , 0 sinon .  
 `tar_actuel` : variable qui porte le nom du tar actuel si `pwd_global` comporte un tar .  
 _`NOTABENE:pour plus de détails voir le code ...`_  
 Les fonctionnalités de la première partie sont exactement le squelette du Shell , cela veut dire les fonctions et procédures qui vont être utilisées pour exécuter par la suite  les commandes qui vont manipuler des fichier *.tar .

@@ -99,7 +99,7 @@ void executerCmdSimple(char *cmd[]){
 	//">"  ">>"  "<"  "2>"  "2>>"  "2>&1"  "2>>&1"
 	
 	if(strcmp(cmd[0],"cd") == 0){
-		if(cmd[1] != NULL){
+		if((cmd[1] != NULL)&&(strcmp(cmd[1],"")!=0)){
 			my_cd_global(cmd[1]);
 		}else{
 			char* id=getenv("USER");
@@ -129,26 +129,30 @@ void executerCmdSimple(char *cmd[]){
 						}else{
 							if(strcmp(cmd[0],"ls")==0){
 								if(cmd[1] != NULL){
-									if (strstr(cmd[1],".tar/")!=NULL){
-										if(strcmp(cmd[1],"-l")==0){
+									if(strcmp(cmd[1],"-l")==0){
+										if(cmd[2] != NULL){
 											ls(cmd[2],1);
 										}else{
-											ls(cmd[1],0);
+											ls("",1);
 										}
 									}else{
-										if(strcmp(cmd[1],"-l")==0){
-											ls(cmd[2],1);
-										}else{
-											ls(cmd[1],0);
-										}
+										ls(cmd[1],0);
 									}
+								}else{
+									ls("",0);
 								}
 							}else{
 								if(strcmp(cmd[0],"cat")==0){
-									cat(cmd[1]);
+									if(cmd[1] != NULL){
+										cat(cmd[1]);
+									}else{
+										cat("");
+									}
 								}else{	
 									if(strcmp(cmd[0],"cp")==0){
-										cp(cmd[1],cmd[2]);
+										if(cmd[1]!=NULL && cmd[2] != NULL){
+											cp(cmd[1],cmd[2]);
+										}
 									}else{
 			
 									}				
