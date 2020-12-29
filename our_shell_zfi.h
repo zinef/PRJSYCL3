@@ -139,4 +139,7 @@ int cp (char source[100], char destination[100]);
 void mv(char source[100], char destination[100]);
 void filter_cmd(char *listArgsRed[100],char *listeArgs[MAXCMDs]);
 char *recupere_nom(char *path);
+int rm_r(char *nom_rep);
+int check_for_rep(char *nomfic,char *path,int *entete_lu,int *cpt);
+int remove_directory(char *path);
 #endif //__OUR_SHELL_ZFI_INCLUDED__

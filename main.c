@@ -9,10 +9,10 @@ int main(int argc,char **argv){
 	//signal et variables pour gestion des redirections
 	signal(SIGINT , stop);
 	std_out_copy   = dup(STDOUT_FILENO);
-    	std_error_copy = dup(STDERR_FILENO);
-    	std_in_copy    = dup(STDIN_FILENO ); 
+    std_error_copy = dup(STDERR_FILENO);
+    std_in_copy    = dup(STDIN_FILENO ); 
 	char *out_file1 = malloc(sizeof(char*)),*out_file2= malloc(sizeof(char*)),*out_file3= malloc(sizeof(char*));
-    	int fd1,fd2,fd3;
+    int fd1,fd2,fd3;
    	char *listArgsRed[100];
 	//initialisation de listArgsRed
     	for(int j = 0 ; j<100;j++){
@@ -35,8 +35,12 @@ int main(int argc,char **argv){
 
 	//loop
 	for(ever){
-		//Afficher le répértoire courant 
-		
+		running=1;
+		strcpy(entree,"");
+		for(int j = 0 ; j<MAXCMDs;j++){
+        	listeArgs[j] = NULL;
+   		}
+   		//Afficher le répértoire courant
 		my_pwd_global();
 		write(1,ANSI_COLOR_CYAN,strlen(ANSI_COLOR_CYAN));
 		write(1,pwd_global,strlen(pwd_global));

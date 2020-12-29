@@ -15,7 +15,7 @@ void Initialiser_shell(){
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	write(1,"\n***********OUR SHELL ZFI***********\n",strlen("\n***********OUR SHELL ZFI***********\n"));
 	char *id=getenv("USER");
-	printf("\n \tBienvenu @%s \n",id);
+	write(1,"\n \tBienvenu @",strlen("\n \tBienvenu @"));write(1,id,strlen(id));write(1," \n",strlen(" \n"));
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	sleep(1);
@@ -131,8 +131,14 @@ void executerCmdSimple(char *cmd[]){
 						write(1,"\n",sizeof("\n"));
 					}else{
 						if(strcmp(cmd[0],"rm") == 0){
-							if(cmd[1] != NULL)
-								rm(cmd[1]);
+							if(cmd[1] != NULL){
+								if(strcmp(cmd[1],"-r")==0){
+									if(cmd[2] != NULL)
+										rm_r(cmd[2]);
+								}else{
+									rm(cmd[1]);
+								}
+							}
 						}else{
 							if(strcmp(cmd[0],"ls")==0){
 								if(cmd[1] != NULL){
@@ -166,7 +172,6 @@ void executerCmdSimple(char *cmd[]){
 												mv(cmd[1],cmd[2]);
 											}
 										}else{
-										
 										}
 									}				
 								}
@@ -623,8 +628,7 @@ int my_mkdir(char *nom_rep){
 			return -1 ;
 		}
 		char buf[513]="";
-		time_t t;
-		char* uid=getenv("USER");
+
 		
 		//on ajoute le répértoire si ce n'est pas un doublon
 		//on doit écrire à l'entete entete_a_modifier si trouve est vrai i.e. trouve=1
@@ -639,20 +643,19 @@ int my_mkdir(char *nom_rep){
 				write(1,"zfi :mkdir : No such file\n",strlen("zfi :mkdir : No such file\n"));
 				return -1 ;
 			}
-			//struct passwd *pw = getpwuid(getuid());
-            //struct group  *gr = getgrgid(getgid());
 			st=(struct posix_header * ) buf;
+			mkdir("/tmp/testspecreptomkdir",0700);
+			struct stat statbuf;
+			int r=stat("/tmp/testspecreptomkdir",&statbuf);
+			remove("/tmp/testspecreptomkdir");
+    		sprintf(st -> mtime,"%lo",statbuf.st_mtime);
+    		sprintf(st -> uid  ,"%o" ,statbuf.st_uid);
+    		sprintf(st -> gid  ,"%o" ,statbuf.st_gid);
 			strcpy(st->name,"");
 			strcpy(st->name,tmp);
 			sprintf(st->size,"%o",0);
 			st->typeflag='5';
 			sprintf(st->mode,"0000700");//drwx------
-			time(&t);
-			sprintf(st->mtime, "%lo",t);
-			sprintf(st->uid,"%o",getuid());
-			sprintf(st->gid,"%o",getgid());
-			strcpy(st->uname,"user");
-			strcpy(st->gname, "user");
 			strcpy(st->magic,TMAGIC);
 			strcpy(st->version,TVERSION);
 			set_checksum(st);
@@ -663,16 +666,18 @@ int my_mkdir(char *nom_rep){
 			//ajout à la fin du fichier tar 
 			lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
 			st=(struct posix_header * ) buf;
+			mkdir("/tmp/testspecreptomkdir",0700);
+			struct stat statbuf;
+			int r=stat("/tmp/testspecreptomkdir",&statbuf);
+			remove("/tmp/testspecreptomkdir");
+    		sprintf(st -> mtime,"%lo",statbuf.st_mtime);
+    		sprintf(st -> uid  ,"%o" ,statbuf.st_uid);
+    		sprintf(st -> gid  ,"%o" ,statbuf.st_gid);
+			strcpy(st->name,"");
 			strcpy(st->name,tmp);
 			sprintf(st->size,"%o",0);
 			st->typeflag='5';
-			sprintf(st->mode,"0000700");
-			//time(&t);
-			//sprintf(st->mtime, "%ld",t);
-			sprintf(st->uid,"%d",getuid());
-			sprintf(st->gid,"%d",getuid());
-			strcpy(st->uname,uid);
-			strcpy(st->gname,uid);
+			sprintf(st->mode,"0000700");//drwx------
 			strcpy(st->magic,TMAGIC);
 			strcpy(st->version,TVERSION);
 			set_checksum(st);
@@ -722,15 +727,13 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 	struct posix_header *st =malloc(sizeof(struct posix_header));
 
 	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
-		//printf("entete à lire = %d\n",EnteteAlire);
 		st= (struct posix_header * ) buf;
-		//printf("nom fichier = %s\n",st->name);
 		
 		if((st->name)[0] == '\0'){
 			stop=1;
 			
 		}
-		if((startsWith(path,st->name))&&(st->typeflag == '5')){
+		if(startsWith(path,st->name)){
 			*cpt=*cpt+1;
 		}
 		if ((strcmp(st->name,path)==0)&&(st->typeflag == '5')){
@@ -738,7 +741,6 @@ int verif_exist_rep_in_tar_for_rmdir(char *nomfic,char *path,int *entete_lu,int 
 			ret=1;
 		}
 		sscanf(st->size,"%o",&size);
-		//printf("taille du fichier = %d\n",size);
 		if(size==0){
 			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
 		}
@@ -784,10 +786,13 @@ int my_rmdir(char *nom_rep){
 		char suite[100]="";
 		strncpy(suite,&pwd[strlen(pwd)-i+5],i);
 		if(strcmp(suite,"") == 0){
-			strcat(tmp,"/");
+			if(tmp[strlen(tmp)-1] != '/')
+					strcat(tmp,"/");
 		}else{
 			strcat(suite,tmp);
-			strcat(suite,"/");
+			if(tmp[strlen(tmp)-1] != '/'){
+				strcat(suite,"/");
+			}
 			strcpy(tmp,"");
 			strcpy(tmp,suite);
 		}
@@ -832,7 +837,10 @@ int my_rmdir(char *nom_rep){
 		//utilisation de la fonction mkdir 
 		struct stat *st =malloc(sizeof(struct stat));
 		if(stat(tmp,st) == 0){
-			rmdir(tmp);
+			int ret=rmdir(tmp);
+			if(ret<0){
+				write(1,"zfi: rmdir : Not an empty file \n",strlen("zfi: rmdir : Not an empty file \n"));
+			}
 		}else{
 			write(1,"zfi : No such directory\n",strlen("zfi : No such directory\n"));
 			return -1;
@@ -912,10 +920,8 @@ int commandeValide(char **listeArgs){
 		i++;
 	}
 	if(exist){
-		//printf("la commande existe dans le shell\n");
 		return 1;
 	}else{
-		//printf("la commande n'existe pas dans le shell\n");
 		return 0;
 	}
 }
@@ -2948,4 +2954,182 @@ void mv(char source[100], char destination[100]){
     if(cp(source, destination)){
         rm(source);
     }
+}
+/***
+
+
+
+***/
+int check_for_rep(char *nomfic,char *path,int *entete_lu,int *cpt){
+	
+	int fd=open(nomfic,O_RDONLY);
+	if (fd<0){
+			write(1,"zfi :rmdir : No such file \n",strlen("zfi :rmdir : No such file \n"));
+			return -1 ;
+	}
+	char buf[513];
+	int EnteteAlire=0;
+	int stop=0;
+	int size=0;
+	int n=0;
+	int ret=0;
+	
+	struct posix_header *st =malloc(sizeof(struct posix_header));
+
+	while((stop==0)&&((n=read(fd,buf,BLOCKSIZE))>0)){
+		st= (struct posix_header * ) buf;
+		
+		if((st->name)[0] == '\0'){
+			stop=1;
+			
+		}
+		if(startsWith(path,st->name)&&(st->typeflag == '5')){
+			*cpt=*cpt+1;
+			stop=1;
+		}
+		if ((strcmp(st->name,path)==0)&&(st->typeflag == '5')){
+			*entete_lu=EnteteAlire;
+			ret=1;
+		}
+		sscanf(st->size,"%o",&size);
+		if(size==0){
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS);
+		}
+		else{
+			EnteteAlire=EnteteAlire+ ((size + BLOCKSIZE  ) >> BLOCKBITS)+1;
+		}
+
+		lseek(fd,EnteteAlire*BLOCKSIZE,SEEK_SET);
+	}
+	if (n<0){
+		write(1,"zfi :rmdir : Writing error \n",strlen("zfi :rmdir : Writing error \n"));
+			return -1 ;
+	}
+	close(fd);
+	//free(st);
+	return ret;
+
+}
+/***
+	rm_r : la fonction qui implémente le fonctionnement de la commande rm -r 
+	entrées : le fichier à supprimer 
+	sorties : entier 
+***/
+int rm_r(char *nom_rep){
+
+	//récupération de pwd
+	char *pwd=my_pwd_global();
+	
+	int i;
+	if(strstr(pwd,".tar/") != NULL){
+		i=strlen(strstr(pwd,".tar/"));
+	}else{
+		i=0;
+	}
+	char tmp[100];
+	strcpy(tmp,nom_rep);
+	
+	if(i>0){//le chemin ou doit on supprimer un repértoire inclus un tar 
+		char suite[100]="";
+		strncpy(suite,&pwd[strlen(pwd)-i+5],i);
+		if(strcmp(suite,"") == 0){
+			if(tmp[strlen(tmp)-1] != '/')
+					strcat(tmp,"/");
+		}else{
+			strcat(suite,tmp);
+			if(tmp[strlen(tmp)-1] != '/'){
+				strcat(suite,"/");
+			}
+			strcpy(tmp,"");
+			strcpy(tmp,suite);
+		}
+		char tar_file[100]="";
+		strncpy(tar_file,pwd,strlen(pwd)-i+4);
+
+		//tester si le répértoire existe déjà dans le tar actuel
+
+		int *entete_lu=malloc(sizeof(int*));
+		int *cpt=malloc(sizeof(int*));
+		*cpt=0;
+		int ret=check_for_rep(tar_file,tmp,entete_lu,cpt); //entete_a_modifier est l'entete qu'on va modifier pour créer le nouveau rep si ret est == 0
+		if(ret==0){
+			write(1,"zfi : No such directory\n",strlen("zfi : No such directory\n"));
+			return -1; 
+		}
+		//le répértoire existe on verifie si le répértoire est vide , si c'est le cas on le supprime
+		
+		int fd=open(tar_file,O_RDWR);
+		struct posix_header *st =malloc(sizeof(struct posix_header));
+		lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
+		char buf[513]="";
+		int n=read(fd,buf,BLOCKSIZE);
+		if (n<0){
+			write(1,"zfi : No such file\n",strlen("zfi : No such file\n"));
+			return -1;
+		}
+			
+		st=(struct posix_header * ) buf;
+		st->name[0]='#'; //supprimer logiquement le repértoire
+		set_checksum(st);
+		lseek(fd,*entete_lu*BLOCKSIZE,SEEK_SET);
+		write(fd,st,sizeof(struct posix_header));
+		close(fd);
+	}else{//le chemin ou doit on créer le répértoire est un répértoire ordinaire 
+		//utilisation de la fonction mkdir 
+		struct stat *st =malloc(sizeof(struct stat));
+		if(stat(tmp,st) == 0){
+			int ret=remove_directory(tmp);
+		}else{
+			write(1,"zfi : rm :No such directory\n",strlen("zfi : No such directory\n"));
+			return -1;
+		}
+	}	
+}
+
+/***
+	remove_directory : une fonction pour la suppression d'un répértoire non vide (pour rm -r dans le cas normal )
+	entrées : path
+	sorties : entier
+***/
+int remove_directory(char *path) {
+   DIR *d = opendir(path);
+   size_t path_len = strlen(path);
+   int r = -1;
+
+   if (d) {
+      struct dirent *p;
+
+      r = 0;
+      while (!r && (p=readdir(d))) {
+          int r2 = -1;
+          char *buf;
+          size_t len;
+
+          if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+             continue;
+
+          len = path_len + strlen(p->d_name) + 2; 
+          buf = malloc(len);
+
+          if (buf) {
+             struct stat statbuf;
+
+             snprintf(buf, len, "%s/%s", path, p->d_name);
+             if (!stat(buf, &statbuf)) {
+                if (S_ISDIR(statbuf.st_mode))
+                   r2 = remove_directory(buf);
+                else
+                   r2 = unlink(buf);
+             }
+             free(buf);
+          }
+          r = r2;
+      }
+      closedir(d);
+   }
+
+   if (!r)
+      r = rmdir(path);
+
+   return r;
 }

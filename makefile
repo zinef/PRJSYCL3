@@ -1,14 +1,14 @@
 compiler:
-	gcc -g  main.c -o prgm -lreadline
+	gcc -g  main.c -o zfi -lreadline
 
 exec:
-	./prgm
+	./zfi
 
 image:
 	sudo docker build -t zfishell .
 	
 debug:
-	gdb ./prgm
+	gdb ./zfi
 	
 run:
 	sudo docker run -ti zfishell 
