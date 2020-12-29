@@ -15,7 +15,8 @@ void Initialiser_shell(){
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	write(1,"\n***********OUR SHELL ZFI***********\n",strlen("\n***********OUR SHELL ZFI***********\n"));
 	char *id=getenv("USER");
-	write(1,"\n \tBienvenu @",strlen("\n \tBienvenu @"));write(1,id,strlen(id));write(1," \n",strlen(" \n"));
+	//marche pas dans une image
+	//write(1,"\n \tBienvenu @",strlen("\n \tBienvenu @"));write(1,id,strlen(id));write(1," \n",strlen(" \n"));
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	write(1,"\n***********************************\n",strlen("\n***********************************\n"));
 	sleep(1);
@@ -1252,8 +1253,15 @@ void dupliquer_proc (int in, int out, struct command *cmd){
           dup2 (out, 1);
           close (out);
         }
-
+        
+        //controle de la commande à executer
+	if(startsWith("-",cmd->argv[1])){
+		cmd->argv[2]=NULL;
+	}else{
+		cmd->argv[1]=NULL;
+	}
        executerCmdSimple(cmd->argv);//executer_simple command
+      
     }
 
 }
@@ -1281,12 +1289,15 @@ void fork_pipes (int n, struct command *cmd){
       // sauvgarder 'in', le fils qui va suivre va lire depuis 'in'.  
       in = fd [0];
     }
-
+  
   //dernier pipe   
-  if (in != 0)
+  if (in != 0){
     dup2 (in, 0);
-	while ((wpid = wait(&status)) > 0);
-  	executerCmdSimple(cmd[i].argv);//executer_simple command 
+  }
+  if((strcmp(cmd[i].argv[0],"cat")==0)&&((cmd[i].argv[1] == NULL) ||(strcmp(cmd[i].argv[1],"")==0))){
+        	return;
+  }
+  executerCmdSimple(cmd[i].argv);//executer_simple command 
 }
 
 /***
