@@ -216,7 +216,8 @@ void my_cd(char *path){
 		}else{
 			char pwd[1024];
 			getcwd(pwd,sizeof(pwd));
-			strcat(pwd,"/");
+			if(strcmp(pwd,"/")!=0)
+				strcat(pwd,"/");
 			chemin=strcat(pwd,path);
 			flag=chdir(chemin);
 			if(flag == 0) {
@@ -1238,7 +1239,7 @@ int rm(char chaine[100]) {
 fonctions pour execution des pipes
 
 ***/
-void dupliquer_proc (int in, int out, struct command *cmd){
+int dupliquer_proc (int in, int out, struct command *cmd){
   pid_t pid;
 
   if ((pid = fork ()) == 0){
@@ -1254,20 +1255,15 @@ void dupliquer_proc (int in, int out, struct command *cmd){
           close (out);
         }
         
-        //controle de la commande à executer
-	if(startsWith("-",cmd->argv[1])){
-		cmd->argv[2]=NULL;
-	}else{
-		cmd->argv[1]=NULL;
-	}
-       executerCmdSimple(cmd->argv);//executer_simple command
+      
+       return execvp(cmd->argv [0], (char * const *)cmd->argv);//executer_simple commande
       
     }
-
+	return pid;
 }
 
 
-void fork_pipes (int n, struct command *cmd){
+int fork_pipes (int n, struct command *cmd){
 	int i;
 	pid_t pid,wpid;
 	int in, fd [2];
@@ -1294,10 +1290,8 @@ void fork_pipes (int n, struct command *cmd){
   if (in != 0){
     dup2 (in, 0);
   }
-  if((strcmp(cmd[i].argv[0],"cat")==0)&&((cmd[i].argv[1] == NULL) ||(strcmp(cmd[i].argv[1],"")==0))){
-        	return;
-  }
-  executerCmdSimple(cmd[i].argv);//executer_simple command 
+  
+  return execvp(cmd[i].argv [0], (char * const *)cmd[i].argv);//executer_simple commande 
 }
 
 /***

@@ -1,6 +1,6 @@
 compiler:
 	gcc -g  main.c -o zfi -lreadline
-
+	
 exec:
 	./zfi
 
@@ -12,3 +12,7 @@ debug:
 	
 run:
 	sudo docker run -ti zfishell 
+	
+command:
+	cp ./zfi /usr/bin/
+

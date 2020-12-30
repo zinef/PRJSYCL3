@@ -13,8 +13,8 @@ Mais ca consiste en quoi un Shell ? et les tarballs ?
 3. Si on veut faire une exécution directement sur sa machine , l'utilisateur doit taper les deux commandes suivante `make compiler` suivi après compilation par un `make exec` .
 4. Sinon il existe une possibilité d'exécuter l'application dans un conteneur docker (si l'utilisateur à bien installé docker dans sa machine) , en créant une image docker en tapant juste la commande `make image` et puis après création de l'image on tape `make run ` . après que le conteneur est lancé automatiquement l'utilisateur peut utiliser l'instruction 3. pour exécuter le shell `zfi` de la même manière en se plaçant dans le répertoire `/home/projetSycL3` .  
 Pour le fichier `makefile` , c'est un fichier qui comporte essentiellement les commandes de compilation et d'exécution du Shell ainsi la commande de création et lancement de l'image docker à partir du `Dockerfile` qui se trouve dans le même répertoire  
-+ Pour compiler : `make compiler` (cette opération nécessite l'installation de la la bibliothèque C _readline_ , mais si on l’exécute dans le conteneur  docker cette bibliothèque sera installée à priori)
-+ Pour exécuter : `make exec`
++ Pour compiler : `make compiler` (cette opération nécessite l'installation de la la bibliothèque C _readline_ , mais si on l’exécute dans le conteneur  docker cette bibliothèque sera installée à priori).
++ Pour exécuter : `make exec` , ou bien on peut ajouter ce programme dans /usr/bin avec `make command` et puis on le lance avec la commande `zfi` seulement
 + Pour lancer la création de l'image docker : `make image` (cette opération nécessite l'installation du docker _engine_ sur la machine)
 + Pour lancer le conteneur il suffit de taper : `make run` 
 + Il comporte aussi une option pour débuger le programme : `make debug` 

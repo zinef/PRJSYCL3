@@ -86,8 +86,8 @@ int startsWith(const char *pre, const char *str);
 int countOccurrences(char * str, char * toSearch);
 void chop(char *str, size_t n);
 void my_exit();
-void dupliquer_proc (int in, int out, struct command *cmd);
-void fork_pipes (int n, struct command *cmd);
+int dupliquer_proc (int in, int out, struct command *cmd);
+int fork_pipes (int n, struct command *cmd);
 //rm 
 int  open_tar_file(char ch[100]);
 int get_file_size(struct posix_header *header);

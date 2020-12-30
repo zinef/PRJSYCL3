@@ -9,10 +9,10 @@ int main(int argc,char **argv){
 	//signal et variables pour gestion des redirections
 	signal(SIGINT , stop);
 	std_out_copy   = dup(STDOUT_FILENO);
-    std_error_copy = dup(STDERR_FILENO);
-    std_in_copy    = dup(STDIN_FILENO ); 
+    	std_error_copy = dup(STDERR_FILENO);
+    	std_in_copy    = dup(STDIN_FILENO ); 
 	char *out_file1 = malloc(sizeof(char*)),*out_file2= malloc(sizeof(char*)),*out_file3= malloc(sizeof(char*));
-    int fd1,fd2,fd3;
+    	int fd1,fd2,fd3;
    	char *listArgsRed[100];
 	//initialisation de listArgsRed
     	for(int j = 0 ; j<100;j++){
@@ -70,7 +70,7 @@ int main(int argc,char **argv){
 			
 					}
 					if(cas == 0){
-						write(1,"zfi : No such command\n",sizeof("zfi : No such command\n"));	
+						write(1,"zfi :command not found \n",strlen("zfi :command not found \n"));	
 					}
 			}
 		}
