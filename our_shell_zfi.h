@@ -1,24 +1,6 @@
 #ifndef __OUR_SHELL_ZFI_INCLUDED__
 #define __OUR_SHELL_ZFI_INCLUDED__
 
-#include <stdio.h> 
-#include <string.h>  
-#include <unistd.h> 
-#include <stdlib.h> 
-#include <sys/types.h> 
-#include <sys/wait.h> 
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <dirent.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <time.h>
-#include <pwd.h>
-#include <grp.h>
-#include <signal.h>
-#include "tar.h"
 
 #define ever ;;
 #define MAXCMDs 10
