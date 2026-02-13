@@ -67,8 +67,6 @@ Le `Makefile` contient les commandes nécessaires à la compilation et à l’ex
 * Pour déboguer le programme :
   `make debug`
 
----
 
-Si tu veux, je peux aussi te proposer une version encore plus propre et orientée "projet GitHub public" avec un ton plus professionnel et structuré.
 
 
